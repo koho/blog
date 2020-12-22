@@ -28,7 +28,8 @@ jobs:
       - name: Build site
         run: |
           hugo
-          
+      
+      - name: Upload files
       - uses: actions/upload-artifact@v2
         with:
           name: public
