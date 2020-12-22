@@ -48,4 +48,7 @@ jobs:
           path: ./public
       
       - name: Deploy site
-        run: ls -l ./public
+        run: |
+          tar czf public.tar.gz ./public
+          echo "$SSH_PRIVATE_KEY" | tr -d '\r' | ssh-add - > /dev/null
+          scp ./public.tar.gz root@door.aloop.run:/root
