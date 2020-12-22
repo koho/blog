@@ -47,4 +47,4 @@ jobs:
           name: public
       
       - name: Deploy site
-        run: ls ./public
+        run: ls -l
