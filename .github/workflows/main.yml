@@ -24,7 +24,7 @@ jobs:
       - uses: actions/checkout@v2
 
       - name: Setup Environment
-        run: snap install hugo
+        run: sudo snap install hugo
 
       - name: Build site
         run: |
