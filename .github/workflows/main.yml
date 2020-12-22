@@ -28,4 +28,4 @@ jobs:
 
       - name: Build site
         run: |
-          hugo --version
+          hugo version
