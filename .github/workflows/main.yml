@@ -29,7 +29,7 @@ jobs:
         run: hugo
       
       - name: Upload files
-      - uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v2
         with:
           name: public
           path: ./public/
@@ -42,7 +42,7 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Download files
-      - uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v2
         with:
           name: public
       
