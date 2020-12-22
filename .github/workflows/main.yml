@@ -55,5 +55,4 @@ jobs:
           tar czf public.tar.gz ./public
           eval `ssh-agent -s`
           echo "$SSH_PRIVATE_KEY" | ssh-add - > /dev/null
-          ssh-keygen -R $SERVER
-          scp ./public.tar.gz root@$SERVER:/root
+          scp -o StrictHostKeyChecking=no ./public.tar.gz root@$SERVER:/root
