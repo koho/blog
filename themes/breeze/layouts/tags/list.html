@@ -1,0 +1,19 @@
+{{ define "title" }}bh{{ end }}
+{{ define "main" }}
+<div class="bz-co" id="bzrp">
+    {{ $display := index (where .Site.Menus.main "Identifier" "tags") 0 }}
+
+    <h3 class="bzt">{{ $display.Name }}</h3>
+    <div class="bzd">
+        {{ .Description }}
+    </div>
+
+
+    {{ partial "tags.html" (dict "context" . "Terms" .Site.Taxonomies.tags) }}
+
+    {{ if eq .Kind "term" }}
+    <h3 style="margin-top: 27px; margin-bottom: 27px;">{{ .Title }}({{ len .Pages }})</h3>
+    {{ partial "post/list.html" . }}
+    {{ end }}
+</div>
+{{ end }}

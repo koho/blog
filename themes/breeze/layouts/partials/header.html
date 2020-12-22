@@ -1,0 +1,14 @@
+<header id="bzh">
+    <a href="/" id="logo">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 410.95 192.53"><defs><style>.a{fill:none;}  .b{clip-path:url(#a);}  .c{fill:#182347;}  .d{fill:#ec6b6b;}</style><clipPath id="a" transform="translate(-54.11 -159.48)"><rect class="a" width="512" height="512"/></clipPath></defs><g class="b"><path class="c" d="M367.49,198.38a59.33,59.33,0,0,0-46.94,22.79L284.93,256l35.65,34.82a59.26,59.26,0,0,0,46.93,22.78,57.6,57.6,0,1,0,0-115.2ZM368.55,352a96.47,96.47,0,0,1-76.8-38l-58.28-58,58.34-58a96.25,96.25,0,1,1,76.74,154Z" transform="translate(-54.11 -159.48)"/></g><g class="b"><path class="d" d="M197.79,221.23a59.31,59.31,0,0,0-46.93-22.79,57.6,57.6,0,1,0,0,115.2,59.27,59.27,0,0,0,46.93-22.78L233.47,256Zm28.8,92.8a96,96,0,1,1,0-116.06l58.34,58Z" transform="translate(-54.11 -159.48)"/></g></svg>
+        <b>LOOP</b>
+    </a>
+    <nav id="s-co">
+        <ul>
+            {{ $currentPage := . }}
+            {{ range .Site.Menus.main }}
+            <li><a href="{{ .URL | relURL }}"{{if or (or ($currentPage.IsMenuCurrent "main" .) ($currentPage.HasMenuCurrent "main" .)) (eq $currentPage.Type (lower .Identifier)) }} class="active"{{end}}>{{ .Name }}</a></li>
+            {{ end }}
+        </ul>
+    </nav>
+</header>

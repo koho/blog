@@ -1,0 +1,12 @@
+{{ define "main" }}
+{{ partial "post/article.html" . }}
+
+{{ end }}
+
+{{ define "tail" }}
+<section id="bzpa">
+    {{ partial "post/nav.html" . }}
+    {{ partial "post/comment.html" . }}
+    {{ partial "post/related.html" . }}
+</section>
+{{ end }}

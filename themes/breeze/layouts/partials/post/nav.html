@@ -1,0 +1,12 @@
+<div class="bz-co" id="bzpnn">
+    {{ with .PrevInSection }}
+    <div id="bzpp">
+        <a title="{{ .Title }}" rel="prev" href="{{ .RelPermalink }}"><span>前篇</span>{{ .Title }}</a>
+    </div>
+    {{ end }}
+    {{ with .NextInSection }}
+    <div id="bzpn">
+        <a title="{{ .Title }}" rel="prev" href="{{ .RelPermalink }}"><span>后篇</span>{{ .Title }}</a>
+    </div>
+    {{ end }}
+</div>

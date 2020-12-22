@@ -1,0 +1,8 @@
+<ul class="archive-list">
+    {{ range (.Paginate .Pages.ByDate.Reverse 18).Pages }}
+    <li>
+        <time datetime='{{ .Date.Format "2006-01-02" }}' class="date">{{ .Date.Format "01-02" }}</time>
+        <a href="{{ .RelPermalink }}">{{ .Title }}</a>
+    </li>
+    {{ end }}
+</ul>

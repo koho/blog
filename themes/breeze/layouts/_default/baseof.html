@@ -1,0 +1,13 @@
+<!DOCTYPE html>
+<html lang="zh-CN" id="{{ .Kind }}">
+    {{- partial "head.html" . -}}
+    <body>
+        {{- partial "header.html" . -}}
+        <section class="bztp">
+            {{- block "main" . }}{{- end }}
+        </section>
+        {{ block "tail" . }}{{ end }}
+        {{- partial "note.html" . -}}
+        {{- partial "footer.html" . -}}
+    </body>
+</html>

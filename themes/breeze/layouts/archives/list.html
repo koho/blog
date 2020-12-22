@@ -1,0 +1,24 @@
+{{ define "main" }}
+<div class="bz-co" id="bzrp">
+    {{ $display := index (where .Site.Menus.main "Identifier" "archives") 0 }}
+    <h3 class="bzt">{{ $display.Name }}</h3>
+    <div class="bzd">
+        {{ .Description }}
+    </div>
+
+    {{ partial "tags.html" (dict "context" . "Terms" .Site.Taxonomies.archives.Alphabetical.Reverse ) }}
+
+    <div class="archives">
+    {{ if eq .Kind "term" }}
+        <h3>{{ .Title }}</h3>
+        {{ partial "post/archive.html" . }}
+    {{ else }}
+        {{ range (.Paginate .Pages.ByTitle.Reverse 2).Pages }}
+        <h3>{{ .Name }}</h3>
+        {{ partial "post/archive.html" . }}
+        {{ end }}
+    {{ end }}
+    </div>
+    {{ template "_internal/pagination.html" . }}
+</div>
+{{ end }}

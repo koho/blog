@@ -1,0 +1,17 @@
+{{ $related := .Site.RegularPages.Related . | first 3 }}
+{{ with $related }}
+<div class="bz-co" id="bzrp">
+    <h3 class="bzt">延伸阅读</h3>
+    <div class="bz-pgs">
+{{ range . }}
+        <div class="bz-pg bz-ps0">
+            <a href="{{ .RelPermalink }}" rel="bookmark">
+                <div class="bz-pi" style="background-image:url('/0001/grav/02_hu9edcc5c1b456ed8df609b46aa4fc48c3_140416_390x390_fit_q77_bgffffff_box_2.jpg')"></div>
+                <h4>{{ .Title }}</h4>
+                <p>{{ .Date }}</p>
+            </a>
+        </div>
+{{ end }}
+    </div>
+</div>
+{{ end }}

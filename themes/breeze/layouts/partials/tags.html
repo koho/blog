@@ -1,0 +1,19 @@
+{{ $selectedTag := "" }}
+{{ if eq .context.Kind "term" }}
+{{ $selectedTag = .context.Title }}
+{{ end }}
+<div class="tags-holder">
+    {{ range .Terms }}
+    <div class="tag {{ if eq $selectedTag .Page.Title }} active {{ end }} topic">
+            <span>
+                <a href="{{ .Page.RelPermalink }}">
+                    <div>
+                        <div aria-haspopup="true" aria-expanded="false">
+                            {{ .Page.Title }} <span class="badge badge-light">{{ .Count }}</span>
+                        </div>
+                    </div>
+                </a>
+            </span>
+    </div>
+    {{ end }}
+</div>
