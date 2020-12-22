@@ -27,7 +27,12 @@ jobs:
 
       - name: Build site
         run: |
-          hugo version
+          hugo
+          
+      - uses: actions/upload-artifact@v2
+        with:
+          name: public
+          path: ./public/
           
   deploy:
     needs: [build]
@@ -36,5 +41,10 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      - name: Download files
+      - uses: actions/download-artifact@v2
+        with:
+          name: public
+      
       - name: Deploy site
-        run: ls
+        run: ls ./public
