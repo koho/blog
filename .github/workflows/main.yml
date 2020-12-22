@@ -51,5 +51,6 @@ jobs:
         run: |
           tar czf public.tar.gz ./public
           eval `ssh-agent -s`
+          echo "$SSH_PRIVATE_KEY"
           echo "$SSH_PRIVATE_KEY" | ssh-add - > /dev/null
           scp ./public.tar.gz root@door.aloop.run:/root
