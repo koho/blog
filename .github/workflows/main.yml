@@ -48,6 +48,8 @@ jobs:
           path: ./public
       
       - name: Deploy site
+        env:
+          SSH_PRIVATE_KEY: ${{ secrets.SSH_PRIVATE_KEY }}
         run: |
           tar czf public.tar.gz ./public
           eval `ssh-agent -s`
