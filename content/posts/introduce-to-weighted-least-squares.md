@@ -230,8 +230,6 @@ def IRLS(x, y, p=1):
         W = W_new.flatten().diag()
 ```
 
-![irls1](C:\Users\Administrator\PycharmProjects\picedge\irls1.svg)
-
  上述算法在$1.5 < p < 3$会比较容易收敛，也有一些算法变体在每次迭代过程中会局部更新$\hat\theta$，能够更快的收敛：
 $$
 \beta(k) = q\hat{\beta}(k) + (1 - q) \beta(k - 1)
@@ -336,6 +334,7 @@ def robust_fit(x, y, wfun, tune):
         W = W_new.flatten().diag()
 ```
 
+![irls1](/images/irls1.svg)
 
 
 **参考文献**：

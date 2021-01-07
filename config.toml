@@ -1,16 +1,18 @@
 baseurl = "https://www.aloop.run"
 languageCode = "zh-cn"
 theme = "breeze"
-title = "ALOOP.RUN"
+title = "ELSE"
 DefaultContentLanguage = "zh"
 paginate = 12
 
 
 [params]
     launchDate = 1606500247
-    copyright = "aloop.run"
+    copyright = "else.so"
     github = "koho"
     email = "gerhard@aloop.run"
+    tgId = "1468317831"
+    logoName = "ELSE"
     math = true
 
 [menu]
