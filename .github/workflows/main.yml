@@ -32,7 +32,9 @@ jobs:
         uses: actions/upload-artifact@v2
         with:
           name: public
-          path: ./public/
+          path: |
+            ./public/
+            ./isso.cfg
           
   deploy:
     needs: [build]
@@ -45,7 +47,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: public
-          path: ./public
+          path: ./blog
       
       - name: Deploy site
         env:
@@ -54,7 +56,7 @@ jobs:
           TARGET_DIR: ${{ secrets.TARGET_DIR }}
           USER: ${{ secrets.USER }}
         run: |
-          tar czf public.tar.gz ./public
+          tar czf public.tar.gz ./blog
           eval `ssh-agent -s`
           echo "$SSH_PRIVATE_KEY" | ssh-add - > /dev/null
           scp -o StrictHostKeyChecking=no ./public.tar.gz $USER@$SERVER:$TARGET_DIR
