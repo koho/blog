@@ -42,4 +42,7 @@ paginate = 12
     archive = "archives"
 
 [markup.goldmark.renderer]
-    unsafe= true
+    unsafe = true
+
+[markup.highlight]
+    style = "manni"

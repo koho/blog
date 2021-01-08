@@ -265,7 +265,7 @@ section {
     height: 2px;
     background: #000;
     display: block;
-    margin-top: 1.5rem
+    margin-top: 0.6rem
 }
 
 .bzp>ul li+li,.bzp>ol li+li {
@@ -966,4 +966,34 @@ td {
 
 .archives {
     margin-top: 27px;
+}
+
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.highlight pre {
+    background-color: #f6f6f6 !important;
+    border-radius: 5px;
+}
+
+pre {
+    border-left: none;
+}
+
+pre::-webkit-scrollbar-corner {
+    background-color: transparent;
+    border-color: transparent;
+}
+
+pre::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+    background-color: transparent;
+}
+
+pre::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+    background-color: rgba(0,0,0,0.2);
 }
