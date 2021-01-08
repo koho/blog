@@ -302,7 +302,11 @@ section {
     width: 100%;
     max-width: 40.5rem;
     margin: 0 auto;
-    margin-bottom: 0.6rem
+    margin-bottom: 1.5rem
+}
+
+article .bzt, article .bzd, article .tags {
+    margin-bottom: 0.6rem;
 }
 
 .bzp>figure,.bzp>.flex-video {
