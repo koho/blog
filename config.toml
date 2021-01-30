@@ -1,4 +1,4 @@
-baseurl = "https://www.aloop.run"
+baseurl = "https://www.else.so"
 languageCode = "zh-cn"
 theme = "breeze"
 title = "ELSE"
@@ -10,7 +10,7 @@ paginate = 12
     launchDate = 1606500247
     copyright = "else.so"
     github = "koho"
-    email = "gerhard@aloop.run"
+    email = "gerhard@else.so"
     tgId = "1468317831"
     logoName = "ELSE"
     math = true
