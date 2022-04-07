@@ -422,7 +422,7 @@ code {
 
 pre code {
     overflow: auto;
-    font-family: ui-monospace,monospace;
+    font-family: ui-monospace;
     padding: 0;
     margin: 0;
     background-color: transparent;
@@ -604,7 +604,7 @@ pre {
 
 #bzan {
     background-color: #fac800;
-    font-family: ui-monospace, monospace;
+    font-family: ui-monospace;
     font-size: 1rem
 }
 
