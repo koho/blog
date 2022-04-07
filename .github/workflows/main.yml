@@ -34,8 +34,7 @@ jobs:
           name: public
           path: |
             ./public/
-            ./isso.cfg
-          
+
   deploy:
     needs: [build]
     # The type of runner that the job will run on
@@ -60,4 +59,4 @@ jobs:
           eval `ssh-agent -s`
           echo "$SSH_PRIVATE_KEY" | ssh-add - > /dev/null
           scp -o StrictHostKeyChecking=no ./public.tar.gz $USER@$SERVER:$TARGET_DIR
-          ssh -o StrictHostKeyChecking=no $USER@$SERVER "rm -rf $TARGET_DIR/public; tar zxf $TARGET_DIR/public.tar.gz; systemctl restart isso"
+          ssh -o StrictHostKeyChecking=no $USER@$SERVER "rm -rf $TARGET_DIR/public; tar zxf $TARGET_DIR/public.tar.gz;"

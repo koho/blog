@@ -300,7 +300,7 @@ section {
 
 .bzt,.bzd,.bzp>*,#comments>div, article .tags {
     width: 100%;
-    max-width: 40.5rem;
+    max-width: 60rem;
     margin: 0 auto;
     margin-bottom: 1.5rem
 }
@@ -366,25 +366,55 @@ article .bzt, article .bzd, article .tags {
 }
 
 .bzp blockquote {
-    border-left: 2px solid #090
+    color: #656565;
+    border-left: 3px solid #efefef;
+    border-left-width: 6px;
+    background-color: rgba(119,119,119,0.05);
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
+    padding: 15px 20px;
 }
 
-pre,code {
+code {
+    padding: 0.2em 0.4em;
+    margin: 0;
+    font-size: 85%;
+    background-color: rgba(175,184,193,0.2);;
+    border-radius: 6px;
+}
+
+pre code {
     overflow: auto;
     font-family: monospace,monospace;
-    padding: 0 .25em
+    padding: 0;
+    margin: 0;
+    background-color: transparent;
+    border: 0;
 }
 
 pre {
-    padding: 1rem;
-    line-height: 1.2;
-    background: #f6f5f3;
-    border-left: .1rem solid gray
+    padding: 16px;
+    overflow: auto;
+    font-size: 85%;
+    line-height: 1.45;
+    background-color: #f0f3f3 !important;
+    border-radius: 6px;
 }
 
-pre>code {
-    font-size: 1rem;
-    padding: 0
+.highlight {
+    display: flex;
+    padding: 16px;
+    overflow: auto;
+    background-color: #f0f3f3;
+    border-radius: 6px;
+}
+
+.highlight pre {
+    padding: 0;
+    overflow: unset;
+    background-color: transparent !important;
+    border-radius: 0;
+    border: 0;
 }
 
 .bzp hr {
@@ -788,15 +818,6 @@ pre>code {
     box-shadow: 1px 1px 2px rgba(0,0,0,.2)
 }
 
-thead {
-    background-color: #fac800;
-    border-bottom: 1px solid gray
-}
-
-td {
-    padding: .2rem
-}
-
 /*************/
 /* PAGINATOR */
 /*************/
@@ -977,27 +998,59 @@ td {
     overflow-y: hidden;
 }
 
-.highlight pre {
-    background-color: #f6f6f6 !important;
-    border-radius: 5px;
-}
-
-pre {
-    border-left: none;
-}
-
-pre::-webkit-scrollbar-corner {
+pre::-webkit-scrollbar-corner, .highlight::-webkit-scrollbar-corner {
     background-color: transparent;
     border-color: transparent;
 }
 
-pre::-webkit-scrollbar {
+pre::-webkit-scrollbar, .highlight::-webkit-scrollbar {
     width: 10px;
     height: 10px;
     background-color: transparent;
 }
 
-pre::-webkit-scrollbar-thumb {
+pre::-webkit-scrollbar-thumb, .highlight::-webkit-scrollbar-thumb {
     border-radius: 10px;
     background-color: rgba(0,0,0,0.2);
+}
+
+.about>* {
+    max-width: unset !important;
+}
+
+#logo-name {
+    font-family: 'Mali', cursive;
+}
+
+table {
+    margin-top: 0;
+    margin-bottom: 16px;
+    border-spacing: 0;
+    border-collapse: collapse;
+    display: block;
+    width: max-content;
+    max-width: 100%;
+    overflow: auto;
+}
+
+table th {
+    font-weight: 600;
+}
+
+table th, table td {
+    padding: 6px 13px;
+    border: 1px solid #d0d7de;
+}
+
+table tr {
+    background-color: #ffffff;
+    border-top: 1px solid hsla(210,18%,87%,1);
+}
+
+table tr:nth-child(2n) {
+    background-color: #f6f8fa;
+}
+
+table img {
+    background-color: transparent;
 }

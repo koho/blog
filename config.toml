@@ -1,18 +1,18 @@
-baseurl = "https://www.else.so"
+baseurl = "https://xhat.org"
 languageCode = "zh-cn"
 theme = "breeze"
-title = "ELSE"
+title = "xhat's Blog"
 DefaultContentLanguage = "zh"
 paginate = 12
 
 
 [params]
     launchDate = 1606500247
-    copyright = "else.so"
+    copyright = "xhat"
     github = "koho"
-    email = "gerhard@else.so"
+    email = "gwohau.tan@gmail.com"
     tgId = "1468317831"
-    logoName = "ELSE"
+    logoName = "xhat"
     math = true
 
 [menu]
@@ -45,4 +45,4 @@ paginate = 12
     unsafe = true
 
 [markup.highlight]
-    style = "manni"
+    style = "github"

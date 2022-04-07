@@ -18,3 +18,5 @@ image: /images/CAAUmNO1.jpg
 ```shell
 ssh root@openwrt tcpdump -s 0 -U -n -w - -i eth1 not port 22 | wireshark -k -i -
 ```
+
+注意将`eth1`替换为你实际需要捕获的接口。
