@@ -46,7 +46,7 @@ jobs:
         uses: actions/download-artifact@v2
         with:
           name: public
-          path: ./blog
+          path: ./html
       
       - name: Deploy site
         env:
@@ -55,8 +55,8 @@ jobs:
           TARGET_DIR: ${{ secrets.TARGET_DIR }}
           USER: ${{ secrets.USER }}
         run: |
-          tar czf public.tar.gz ./blog
+          tar czf html.tar.gz ./html
           eval `ssh-agent -s`
           echo "$SSH_PRIVATE_KEY" | ssh-add - > /dev/null
-          scp -o StrictHostKeyChecking=no ./public.tar.gz $USER@$SERVER:$TARGET_DIR
-          ssh -o StrictHostKeyChecking=no $USER@$SERVER "rm -rf $TARGET_DIR/public; tar zxf $TARGET_DIR/public.tar.gz;"
+          scp -o StrictHostKeyChecking=no ./html.tar.gz $USER@$SERVER:$TARGET_DIR
+          ssh -o StrictHostKeyChecking=no $USER@$SERVER "rm -rf $TARGET_DIR/html; tar zxf $TARGET_DIR/html.tar.gz -C $TARGET_DIR;"
