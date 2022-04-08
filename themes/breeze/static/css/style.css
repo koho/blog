@@ -1164,3 +1164,8 @@ table tr:nth-child(2n) {
 table img {
     background-color: transparent;
 }
+
+.bzp>ol>li>p {
+    margin-top: 16px;
+    margin-bottom: 16px;
+}
