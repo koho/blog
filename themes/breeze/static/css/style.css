@@ -217,7 +217,7 @@ cite:before {
 
 #bzh,.bz-co,#bzlis {
     margin: 0 auto;
-    max-width: 79rem;
+    max-width: 61.5rem;
     padding: 1.25rem
 }
 
@@ -338,7 +338,7 @@ section {
 }
 
 .bz-co {
-    padding-left: 15rem;
+    padding-left: 13rem;
     text-align: justify
 }
 
@@ -597,7 +597,7 @@ pre {
 }
 
 #bzcts {
-    max-width: 56rem
+    max-width: 58rem
 }
 
 .bz-pgs {
@@ -1168,4 +1168,13 @@ table img {
 .bzp>ol>li>p {
     margin-top: 16px;
     margin-bottom: 16px;
+}
+
+footer {
+    color: #8a8a8a;
+    text-align: center;
+    font-family: Athelas,STHeiti,Microsoft Yahei,serif;
+    width: 100%;
+    line-height: 1.6rem;
+    padding-bottom: 1rem;
 }
