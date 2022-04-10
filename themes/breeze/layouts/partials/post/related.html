@@ -1,22 +1,11 @@
 {{ $related := .Site.RegularPages.Related . | first 2 }}
 {{ with $related }}
-<div class="bz-co" id="bzrp">
-    <h3 class="bzt">延伸阅读</h3>
-    <div class="bz-pgs">
-{{ range . }}
-        <div class="bz-pg bz-ps0">
-            <a href="{{ .RelPermalink }}" rel="bookmark">
-                <div class="bz-pi" style="background-image:url('{{ .Params.image }}')"></div>
-                <h4>{{ .Title }}</h4>
-                <p>{{ .Date.Format "2006-01-02" }}</p>
-                <div class="tags">
-                    {{ range .Params.tags }}
-                    <span class="ls-tag">{{ . }}</span>
-                    {{ end }}
-                </div>
-            </a>
-        </div>
-{{ end }}
+<div class="content" id="post-related">
+    <h3 class="title">延伸阅读</h3>
+    <div class="grid">
+    {{ range . }}
+        {{ partial "post/card.html" . }}
+    {{ end }}
     </div>
 </div>
 {{ end }}

@@ -2,18 +2,10 @@
 {{ if eq .context.Kind "term" }}
 {{ $selectedTag = .context.Title }}
 {{ end }}
-<div class="tags-holder">
+<div class="tags">
     {{ range .Terms }}
-    <div class="tag {{ if eq $selectedTag .Page.Title }} active {{ end }} topic">
-            <span>
-                <a href="{{ .Page.RelPermalink }}">
-                    <div>
-                        <div aria-haspopup="true" aria-expanded="false">
-                            {{ .Page.Title }} <span class="badge badge-light">{{ .Count }}</span>
-                        </div>
-                    </div>
-                </a>
-            </span>
-    </div>
+    <a href="{{ .Page.RelPermalink }}" {{ if eq $selectedTag .Page.Title }} class="active" {{ end }}>
+        {{ .Page.Title }} <span class="badge">{{ .Count }}</span>
+    </a>
     {{ end }}
 </div>

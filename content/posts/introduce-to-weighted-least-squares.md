@@ -7,10 +7,9 @@ tags:
     - 机器学习
     - 回归
 image: /images/0_g0BN7JUBfBoDkriE.png
+leading: true
 draft: false
 ---
-
-{{< figure src="/images/0_g0BN7JUBfBoDkriE.png" >}}
 
 ## 介绍
 多元线性回归模型的关系式为：
@@ -333,8 +332,9 @@ def robust_fit(x, y, wfun, tune):
 
         W = W_new.flatten().diag()
 ```
-
-![irls1](/images/irls1.svg)
+<p align="center">
+  <img src="/images/irls1.svg">
+</p>
 
 
 **参考文献**：

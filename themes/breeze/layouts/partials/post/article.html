@@ -1,18 +1,21 @@
-<article class="bz-co" itemscope="" itemtype="//schema.org/Article">
-    <h2 class="bzt" itemprop="name headline title">{{ .Title }}</h2>
-    <div class="bzd">
+<article class="content">
+    <h2 class="title">{{ .Title }}</h2>
+    <div class="remark">
         {{ if .Params.Author }}
-        <span itemprop="author name" itemscope="" itemtype="//schema.org/Person">{{ .Params.Author }} @ </span>
+        <span>{{ .Params.Author }} @ </span>
         {{ end }}
-        <time datetime="{{ .Date }}" itemprop="datePublished">{{ .Date.Format "2006-01-02" }}</time>
+        <time datetime="{{ .Date }}" >{{ .Date.Format "2006-01-02" }}</time>
     </div>
     <div class="tags">
         {{ $currentPage := . }}
         {{ range .Params.tags }}
-        <span class="ls-tag"><a href='{{ ($currentPage.Site.Taxonomies.tags.Get (lower .)).Page.RelPermalink }}'>{{ . }}</a></span>
+        <a href='{{ ($currentPage.Site.Taxonomies.tags.Get (lower .)).Page.RelPermalink }}'>{{ . }}</a>
         {{ end }}
     </div>
-    <div class="bzp" itemprop="articleBody">
+    {{ if .Params.leading }}
+    <figure><img src="{{ .Params.image }}" alt="leading"></figure>
+    {{ end }}
+    <div class="markdown-body">
         {{ .Content }}
     </div>
     {{ if .Site.Params.math }}

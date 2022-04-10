@@ -1,17 +1,6 @@
-<div class="bz-pgs">
+<div class="grid">
     {{ range (.Paginate .Pages.ByDate.Reverse).Pages }}
-    <div class="bz-pg bz-ps0">
-        <a href="{{ .RelPermalink }}" rel="bookmark">
-            <div class="bz-pi" style="background-image:url('{{ .Params.image }}')"></div>
-            <h4>{{ .Title }}</h4>
-            <p>{{ .Date.Format "2006-01-02" }}</p>
-            <div class="tags">
-                {{ range .Params.tags }}
-                <span class="ls-tag">{{ . }}</span>
-                {{ end }}
-            </div>
-        </a>
-    </div>
+        {{ partial "post/card.html" . }}
     {{ end }}
 </div>
 {{ template "_internal/pagination.html" . }}

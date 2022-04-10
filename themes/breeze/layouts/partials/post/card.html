@@ -1,0 +1,12 @@
+<div class="card">
+    <a href="{{ .RelPermalink }}" rel="bookmark">
+        <div class="banner" style="background-image:url('{{ .Params.image }}')"></div>
+        <h4>{{ .Title }}</h4>
+        <p>{{ .Date.Format "2006-01-02" }}</p>
+        <div class="tags">
+            {{ range .Params.tags }}
+            <span>{{ . }}</span>
+            {{ end }}
+        </div>
+    </a>
+</div>
