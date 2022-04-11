@@ -85,6 +85,6 @@ crontab -e
 ```
 注意`reresolve-dns.sh`脚本里用到的`$EPOCHSECONDS`这个变量，如果你的系统不支持，需要替换成`$(date +%s)`。
 
-**参考链接**：
+## 参考
 
 [1] [How to easily configure WireGuard](https://www.stavros.io/posts/how-to-configure-wireguard/)

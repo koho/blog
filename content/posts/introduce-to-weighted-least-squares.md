@@ -332,12 +332,9 @@ def robust_fit(x, y, wfun, tune):
 
         W = W_new.flatten().diag()
 ```
-<p align="center">
-  <img src="/images/irls1.svg">
-</p>
+{{<cimg "/images/irls1.svg" >}}
 
-
-**参考文献**：
+## 参考
 
 [1] [Iterative Reweighted Least Squares](https://cnx.org/exports/92b90377-2b34-49e4-b26f-7fe572db78a1@12.pdf/iterative-reweighted-least-squares-12.pdf)
 

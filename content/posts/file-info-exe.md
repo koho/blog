@@ -9,7 +9,8 @@ image: /images/exeinfo.gif
 draft: false
 ---
 
-### 创建清单文件`manifest.xml`
+## 创建清单文件
+文件名为`manifest.xml`。如果不需要管理器权限，就把`trustInfo`删掉。
 ```xml
 <?xml version="1.0" encoding="UTF-8" standalone="yes"?>
 <assembly xmlns="urn:schemas-microsoft-com:asm.v1" manifestVersion="1.0">
@@ -35,7 +36,8 @@ draft: false
 </assembly>
 ```
 
-### 创建资源文件`resources.rc`
+## 创建资源文件
+文件名为`resources.rc`，如果没有清单文件，可将对应的行删掉，图标文件类似。
 ```c
 #include <windows.h>
 
@@ -79,7 +81,11 @@ BEGIN
 END
 ```
 
-### 编译资源
+## 编译资源
 ```shell
-windres -DVERSION_STR=1.0.1.0 -DPRODUCT_VERSION_STR=1.0.1.0 -DAPP_ICO=app.ico -i resources.rc -o rsrc.o -O coff -c 65001
+windres -DVERSION_ARRAY=1,0,1,0 -DVERSION_STR=1.0.1.0 -DPRODUCT_VERSION_STR=1.0.1.0 -DAPP_ICO=app.ico -i resources.rc -o rsrc.o -O coff -c 65001
 ```
+
+## 参考
+
+[1] [VERSIONINFO Resource](https://docs.microsoft.com/en-us/windows/win32/menurc/versioninfo-resource)
