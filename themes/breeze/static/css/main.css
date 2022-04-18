@@ -45,7 +45,7 @@ header {
     padding-top: 54px;
 }
 
-header>* {
+header > * {
     width: 225px;
     pointer-events: auto;
 }
@@ -80,7 +80,7 @@ nav li {
     text-align: center;
 }
 
-nav li+li {
+nav li + li {
     margin-top: 16px;
 }
 
@@ -135,12 +135,12 @@ nav li a.active:before {
 .grid {
     display: grid;
     transition: grid-template-columns 200ms ease-in-out;
-    grid-template-columns: repeat(auto-fill,minmax(270px,1fr));
+    grid-template-columns: repeat(auto-fill, minmax(270px, 1fr));
     grid-gap: 27px;
 }
 
 .card a {
-    background-color: rgba(255,255,255,.8);
+    background-color: rgba(255, 255, 255, .8);
     display: block;
     box-shadow: 0 2px 7px rgb(0 0 0 / 30%);
     border-radius: 5px;
@@ -193,8 +193,8 @@ nav li a.active:before {
     margin-bottom: 16px;
 }
 
-.card .tags>*, article>.tags>a {
-    background: rgba(0,102,255,.1);
+.card .tags > *, article > .tags > a {
+    background: rgba(0, 102, 255, .1);
     border-radius: 4px;
     color: #06f;
     font-size: 14px;
@@ -248,7 +248,7 @@ footer {
         flex-direction: row;
         align-items: center;
         justify-content: space-between;
-        box-shadow: 0 1px 1px 0 rgba(0,0,0,.2);
+        box-shadow: 0 1px 1px 0 rgba(0, 0, 0, .2);
         padding: 16px;
     }
 
@@ -264,7 +264,7 @@ footer {
         flex-direction: row;
     }
 
-    nav li+li {
+    nav li + li {
         margin: 0;
     }
 
@@ -345,7 +345,7 @@ footer {
     background: #fff;
 }
 
-article>* {
+article > * {
     margin-bottom: 12px !important;
 }
 
@@ -362,9 +362,9 @@ article .tags {
     height: 27px;
 }
 
-article .tags>a:hover {
+article .tags > a:hover {
     color: #06f;
-    background-color: rgba(0,102,255,.15);
+    background-color: rgba(0, 102, 255, .15);
 }
 
 figure img {
@@ -375,7 +375,7 @@ figure img {
     margin-right: auto;
 }
 
-.tail>* {
+.tail > * {
     padding-top: 16px;
 }
 
@@ -387,7 +387,7 @@ figure img {
     line-height: 1.8;
 }
 
-#post-nav>* {
+#post-nav > * {
     flex: 1 0 50%;
     padding: 18px 32px;
     text-align: center;
@@ -395,22 +395,22 @@ figure img {
     background-repeat: no-repeat;
 }
 
-#post-nav>*:hover {
+#post-nav > *:hover {
     background-color: #f9f2e3;
 }
 
-#post-nav>a[rel=prev] {
+#post-nav > a[rel=prev] {
     background-image: url(/images/prev.svg);
     background-position: 0;
     border-right: 1px solid gray;
 }
 
-#post-nav>a[rel=next] {
+#post-nav > a[rel=next] {
     background-image: url(/images/next.svg);
     background-position: 100%;
 }
 
-#post-nav>a:only-child {
+#post-nav > a:only-child {
     border-right: 0;
 }
 
@@ -420,10 +420,15 @@ figure img {
     display: block;
 }
 
-.highlight pre code>span {
+.highlight pre code > span {
     display: unset !important;
 }
 
 .highlight pre {
     background-color: #f6f8fa !important;
+}
+
+.katex-display {
+    overflow-x: auto;
+    overflow-y: hidden;
 }
