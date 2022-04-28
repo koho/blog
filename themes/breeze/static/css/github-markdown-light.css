@@ -211,7 +211,8 @@
 .markdown-body table {
   border-spacing: 0;
   border-collapse: collapse;
-  width: 100%;
+  display: block;
+  width: max-content;
   max-width: 100%;
   overflow: auto;
 }
