@@ -27,7 +27,7 @@ a:hover {
 
 header, .content, footer {
     margin: 0 auto;
-    max-width: 1094px;
+    max-width: 856px;
     padding: 16px;
 }
 
@@ -46,7 +46,7 @@ header {
 }
 
 header > * {
-    width: 225px;
+    width: 90px;
     pointer-events: auto;
 }
 
@@ -107,7 +107,7 @@ nav li a.active:before {
 
 .content {
     padding-top: 54px;
-    padding-left: 234px;
+    padding-left: 140px;
 }
 
 .title, .note {

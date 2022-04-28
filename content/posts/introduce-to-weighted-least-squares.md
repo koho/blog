@@ -332,7 +332,7 @@ def robust_fit(x, y, wfun, tune):
 
         W = W_new.flatten().diag()
 ```
-{{<cimg "/images/irls1.svg" >}}
+{{<cimg src="/images/irls1.svg" >}}
 
 ## 参考
 

@@ -17,7 +17,7 @@ MQTT (Message Queuing Telemetry Transport Protocol) 消息队列遥测传输协�
 
 API 接口一般是请求/响应模型，MQTT v5 也开始支持请求响应的模式了，具体的流程如下：
 
-{{<cimg "/images/mqtt-req-resp.png" >}}
+{{<cimg src="/images/mqtt-req-resp.png" >}}
 
 1. 请求方在发布消息时包含 **响应主题(Response Topic)** 属性，比如使用客户端标识符 (Client ID)。
 2. 请求方在发布消息时包含 **对比数据(Correlation Data)** 属性，比如使用当前时间戳。请求可以是异步的，如果同时发送多个请求，那请求方需要一个字段来区分响应消息属于哪个请求。

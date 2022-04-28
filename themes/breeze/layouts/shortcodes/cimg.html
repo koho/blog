@@ -1,3 +1,5 @@
 <p align="center">
-    <img src="{{ .Get 0 }}">
+    <img src='{{ .Get "src" }}'
+    {{ if (.Get "width") }}width='{{ .Get "width" }}'{{end}}
+    {{ if (.Get "height") }}height='{{ .Get "height" }}'{{end}}>
 </p>
