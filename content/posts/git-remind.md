@@ -12,8 +12,11 @@ draft: false
 ### 设置用户信息
 ```shell
 git config --global --list
+# 用户
 git config --global user.name "your-name"
 git config --global user.email user@example.com
+# GPG 签名
+git config --global user.signingkey XXXXXX
 ```
 
 ### 克隆仓库
