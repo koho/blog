@@ -1,0 +1,147 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>加权最小二乘 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>加权最小二乘</h2><div class=remark><time datetime="2020-11-30 13:17:00 +0800 +0800">2020-11-30</time></div><div class=tags><a href=/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/>机器学习</a>
+<a href=/tags/%E5%9B%9E%E5%BD%92/>回归</a></div><figure><img src=/images/0_g0BN7JUBfBoDkriE.png alt=leading></figure><div class=markdown-body><h2 id=介绍>介绍</h2><p>多元线性回归模型的关系式为：</p>$$
+y_i= \beta_0+\beta_1 x_{i1}+\beta_2 x_{i2} + \dots + \beta_p x_{ip} + \epsilon_i
+$$<p>假设随机误差项 $\epsilon_i(i=1,\dots,n)$满足</p>$$
+E(\epsilon_i) = 0,\quad \text{Cov}(\epsilon_i,\epsilon_j)=\begin{cases}
+\sigma^2, &  i=j, \\
+    0,  & i \ne j.
+ \end{cases}
+$$<p>上式通常称为<strong>高斯-马尔可夫条件</strong>。随机误差$\epsilon_i$的协方差为零表明随机误差项在不同的样本点之间是不相关的(在正态条件下即为独立)。随机误差项$\epsilon_i$在不同的样本点有相同的方差表明各次观测之间有相同的精度。</p><p>多元线性回归模型改写成矩阵形式如下：</p>$$
+Y=X\mathbf{\beta}+\epsilon,\quad \epsilon\sim\mathbf{N}(0,\sigma^2I_n)
+$$<h2 id=最小二乘估计>最小二乘估计</h2><p>最小二乘估计(LSE)就是找$\beta_0,\beta_1,\dots,\beta_p$
+，使离差平方和</p>$$
+Q(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2
+$$<p>达到最小，写成矩阵形式如下：</p>$$
+Q(\beta)= (Y-X\beta)^T(Y-X\beta)
+$$<p>上式中每个平方项的权数相同，是普通最小二乘回归参数估计方法。在误差项$\epsilon_i$等方差不相关的条件下，普通最小二乘估计是回归参数的最小方差线性无偏估计。</p><h2 id=加权最小二乘>加权最小二乘</h2><p>然而在异方差的条件下，平和和中的每一项的地位是不相同的。误差项$\epsilon_i$的方差$\sigma_i^2$大的项，在上式平方和中的取值就偏大，在平方和中的作用就大，因而普通最小二乘估计的回归线就被拉向方差大的项，方差大的项的拟合程度就好，而方差小的项拟合程度就差。由此求出的$\hat{\beta_0},\hat{\beta_1},\dots,\hat{\beta_p}$
+仍然是$\beta_0,\beta_1,\dots,\beta_p$
+的无偏估计，但不再是最小方差线性无偏估计。</p><p>加权最小二乘估计的方法是在平方和中加入一个适当的权数$w_i$，以调整各项在平方和中的作用，加权最小二乘的离差平方和为：</p>$$
+Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^nw_i(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2
+$$<p>类似地，目标也是寻找$\hat{\beta}$使上式的离差平方和$Q_w$达到最小。上式可以改写为：</p>$$
+Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(\sqrt{w_i}y_i-\sqrt{w_i}\beta_0-\sqrt{w_i}\beta_1x_{i1}-\dots-\sqrt{w_i}\beta_px_{ip})^2
+$$<p>展开为原始的模型式为：</p>$$
+\sqrt{w_i}y_i= \sqrt{w_i}\beta_0+\sqrt{w_i}\beta_1 x_{i1}+\sqrt{w_i}\beta_2 x_{i2} + \dots + \sqrt{w_i}\beta_p x_{ip} + \sqrt{w_i}\epsilon_i
+$$<p>令$\epsilon_i^*=\sqrt{w_i}\epsilon_i$
+, 此时模型中随机误差项的方差为</p>$$
+Var(\epsilon_i^*)=Var(\sqrt{w_i}\epsilon_i)=w_iVar(\epsilon_i)
+$$<p>若使$Var(\epsilon_i^*)=w_iVar(\epsilon_i)=1$
+，则理论上最优的权数$w_i$为误差项方差$\sigma^2$的倒数，即</p>$$
+w_i = \frac{1}{\sigma_i^2}
+$$<p>误差项方差大的项接受小的权数，以降低其在平方和中的作用；误差项方差小的项接受大的权数，以提高其在平方和中的作用。这样求出的加权最小二乘估计$\hat{\beta}$是最小方差线性无偏估计。</p>$$
+\hat{\beta_w}=(X^TWX)^{-1}X^TWY
+$$<p>但是误差项的方差$\sigma^2$是未知的，因此无法真正按照上式选取权数。在实际问题中误差项方差$\sigma^2$通常与某个自变量的水平有关，可以利用这个关系确定权数。例如$\sigma^2$与第$j$个自变量取值的平方成比例时，即$\sigma_i^2=kx_{ij}^2$
+时，这时取权数为</p>$$
+w_i=\frac{1}{x_{ij}^2}
+$$<p>更一般的情况是误差项方差$\sigma_i^2$与某个自变量$x_j$取值的幂函数$x_{ij}^m$成比例，此时权数为</p>$$
+w_i=\frac{1}{x_{ij}^m}
+$$<p>关于自变量$x_j$的选择，选取等级相关系数最大的一个自变量；而$m$值，则选择使对数似然函数最大的一个数。</p><h2 id=m估计>M估计</h2><p>M估计(M代表最大似然类型)定义为解决以下最小化优化问题：</p>$$
+\hat{\theta} = \arg\min_{\displaystyle\theta}\sum_{i=1}^n\rho(x_i, \theta)
+$$<p>其中$\rho$为任意实值函数，这个问题的解$\hat\theta$称为M估计。最小二乘和最大似然估计都是M估计的特例。</p><p>例如最小二乘估计：</p>$$
+\hat\beta=\arg\min_{\displaystyle\theta} \sum_{i=1}^n (y_i-f(x_i;\beta))^2
+$$<h2 id=迭代加权最小二乘>迭代加权最小二乘</h2><p>IRLS (Iterative Reweighted Least Squares)用来求解$p$范数的问题，将$p$范数问题转化为2范数求解。</p><p>目标函数为</p>$$
+||X\beta-Y||_p = \left(\sum_{i=1}^n |\vec{x_i}\cdot\vec{\beta}-y_i|^p\right)^{1/p}
+$$<p>因此可以转化为最优化问题：</p>$$
+\begin{aligned}
+f(\theta) &= \arg\min_{\displaystyle\theta}\sum_{i=1}^n |\vec{x_i}\cdot\vec{\beta}-y_i|^p\\
+&=\arg\min_{\displaystyle\theta}\sum_{i=1}^n |\vec{x_i}\cdot\vec{\beta}-y_i|^{p-2}(\vec{x_i}\cdot\vec{\beta}-y_i)^2 \\
+&= \arg\min_{\displaystyle\theta}\sum_{i=1}^n w_i^2(\vec{x_i}\cdot\vec{\beta}-y_i)^2
+\end{aligned}
+$$<p>所以有$w_i^2=|\vec{x_i}\cdot\vec{\beta}-y_i|^{p-2}$
+，则</p>$$
+w_i=|\vec{x_i}\cdot\vec{\beta}-y_i|^{(p-2)/2}
+$$<p>写成矩阵形式为：</p>$$
+f(\theta)=\arg\min_{\displaystyle\theta} (W^TW(X\beta-Y))^TW^TW(X\beta-Y)
+$$<p>最小二乘解为</p>$$
+\hat\beta=(X^TW^TWX)^{-1}X^TW^TWY
+$$<p>其中$W$为误差权值的对角矩阵。权值的更新公式为：</p>$$
+W=|X\beta-Y|^{(p-2)/2}
+$$<p>算法设定初始权值$W=I$，然后根据上式更新权值$W$，重复迭代直到$\hat\theta$收敛。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>IRLS</span>(x, y, p<span style=color:#000;font-weight:700>=</span><span style=color:#099>1</span>):
+</span></span><span style=display:flex><span>    X <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>stack([torch<span style=color:#000;font-weight:700>.</span>ones(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>], ), torch<span style=color:#000;font-weight:700>.</span>tensor(x)], axis<span style=color:#000;font-weight:700>=</span><span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>    Y <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>tensor(y)<span style=color:#000;font-weight:700>.</span>view(<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#099>1</span>)<span style=color:#000;font-weight:700>.</span>float()
+</span></span><span style=display:flex><span>    W <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>eye(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>])
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>while</span> <span style=color:#000;font-weight:700>True</span>:
+</span></span><span style=display:flex><span>        beta <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>T<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(X)<span style=color:#000;font-weight:700>.</span>inverse()<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(Y)
+</span></span><span style=display:flex><span>        e <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>matmul(beta) <span style=color:#000;font-weight:700>-</span> Y
+</span></span><span style=display:flex><span>        W_new <span style=color:#000;font-weight:700>=</span> e<span style=color:#000;font-weight:700>.</span>abs() <span style=color:#000;font-weight:700>**</span> ((p <span style=color:#000;font-weight:700>-</span> <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span>)
+</span></span><span style=display:flex><span>        W_new <span style=color:#000;font-weight:700>=</span> W_new <span style=color:#000;font-weight:700>/</span> W_new<span style=color:#000;font-weight:700>.</span>sum()
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> torch<span style=color:#000;font-weight:700>.</span>norm(W<span style=color:#000;font-weight:700>.</span>diag() <span style=color:#000;font-weight:700>-</span> W_new<span style=color:#000;font-weight:700>.</span>flatten(), <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>&lt;</span> <span style=color:#099>0.005</span>:
+</span></span><span style=display:flex><span>            <span style=color:#000;font-weight:700>return</span> beta
+</span></span><span style=display:flex><span>        <span style=color:#0086b3>print</span>(W_new<span style=color:#000;font-weight:700>.</span>flatten())
+</span></span><span style=display:flex><span>        W <span style=color:#000;font-weight:700>=</span> W_new<span style=color:#000;font-weight:700>.</span>flatten()<span style=color:#000;font-weight:700>.</span>diag()
+</span></span></code></pre></div><p>上述算法在$1.5 &lt; p &lt; 3$会比较容易收敛，也有一些算法变体在每次迭代过程中会局部更新$\hat\theta$，能够更快的收敛：
+$$
+\beta(k) = q\hat{\beta}(k) + (1 - q) \beta(k - 1)
+$$</p><p>$$
+q=\frac{1}{p - 1}
+$$</p><p>这样$p$越大，新解占的权重越小，旧解的权重越大。还有一些变体使用了动态的$p$值，设定一个初始值$p=2$，当给定的$p>2$时，在每次迭代会增加$p$值，直到达到给定的$p$值，同样当$p&lt;2$时则会逐渐减少到给定的值。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>IRLS2</span>(x, y, K, p):
+</span></span><span style=display:flex><span>    X <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>stack([torch<span style=color:#000;font-weight:700>.</span>ones(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>], ), torch<span style=color:#000;font-weight:700>.</span>tensor(x)], axis<span style=color:#000;font-weight:700>=</span><span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>    Y <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>tensor(y)<span style=color:#000;font-weight:700>.</span>view(<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#099>1</span>)<span style=color:#000;font-weight:700>.</span>float()
+</span></span><span style=display:flex><span>    W <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>eye(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>])
+</span></span><span style=display:flex><span>    beta <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>T<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(X)<span style=color:#000;font-weight:700>.</span>inverse()<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(Y)
+</span></span><span style=display:flex><span>    pk <span style=color:#000;font-weight:700>=</span> <span style=color:#099>2</span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>while</span> <span style=color:#000;font-weight:700>True</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> p <span style=color:#000;font-weight:700>&gt;=</span> <span style=color:#099>2</span>:
+</span></span><span style=display:flex><span>            pk <span style=color:#000;font-weight:700>=</span> <span style=color:#0086b3>min</span>(p, K <span style=color:#000;font-weight:700>*</span> pk)
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>else</span>:
+</span></span><span style=display:flex><span>            pk <span style=color:#000;font-weight:700>=</span> <span style=color:#0086b3>max</span>(p, K <span style=color:#000;font-weight:700>*</span> pk)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        e <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>matmul(beta) <span style=color:#000;font-weight:700>-</span> Y
+</span></span><span style=display:flex><span>        W_new <span style=color:#000;font-weight:700>=</span> e<span style=color:#000;font-weight:700>.</span>abs() <span style=color:#000;font-weight:700>**</span> ((pk <span style=color:#000;font-weight:700>-</span> <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span>)
+</span></span><span style=display:flex><span>        W_new <span style=color:#000;font-weight:700>=</span> W_new <span style=color:#000;font-weight:700>/</span> W_new<span style=color:#000;font-weight:700>.</span>sum()
+</span></span><span style=display:flex><span>        W <span style=color:#000;font-weight:700>=</span> W_new<span style=color:#000;font-weight:700>.</span>flatten()<span style=color:#000;font-weight:700>.</span>diag()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#998;font-style:italic># New beta</span>
+</span></span><span style=display:flex><span>        beta1 <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>T<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(X)<span style=color:#000;font-weight:700>.</span>inverse()<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(Y)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        q <span style=color:#000;font-weight:700>=</span> <span style=color:#099>1</span> <span style=color:#000;font-weight:700>/</span> (pk <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> p <span style=color:#000;font-weight:700>&gt;</span> <span style=color:#099>2</span>:
+</span></span><span style=display:flex><span>            new_beta <span style=color:#000;font-weight:700>=</span> q <span style=color:#000;font-weight:700>*</span> beta1 <span style=color:#000;font-weight:700>+</span> (<span style=color:#099>1</span> <span style=color:#000;font-weight:700>-</span> q) <span style=color:#000;font-weight:700>*</span> beta
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>else</span>:
+</span></span><span style=display:flex><span>            new_beta <span style=color:#000;font-weight:700>=</span> beta1
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> torch<span style=color:#000;font-weight:700>.</span>norm(beta <span style=color:#000;font-weight:700>-</span> new_beta, <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>&lt;</span> <span style=color:#099>0.0005</span>:
+</span></span><span style=display:flex><span>            <span style=color:#000;font-weight:700>return</span> beta
+</span></span><span style=display:flex><span>        beta <span style=color:#000;font-weight:700>=</span> new_beta
+</span></span></code></pre></div><p>从上面的定义可以看出$w_i$误差$e_i$的函数：</p>$$
+w_i=|e_i|^{(p-2)/2}
+$$<p>所以也可能把上面的$w_i$替换成其他一般函数：</p>$$
+w=w\left(\frac{r}{tune*s*\sqrt{1-h}}\right)
+$$<p>其中$r$是误差向量，$tune$是一个常量，$s$是误差的标准差估计，$h$是杠杆值向量，权重函数$w$一般是关于$r$的递减函数，比如</p><p>双平方函数：
+$$
+w = (|r|&lt;1) * (1 - r^2)^2
+$$
+柯西函数：
+$$
+w=1/(1+r^2)
+$$
+$s$标准差的计算公式为: $s = MAD / 0.6745$，$MAD$计算了误差绝对偏差的中位数，注意在计算中位数前先删除掉最小的$p$(特征数)的数。</p><p>类似地，这种形式的权函数也可以使用IRLS进行求解。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>robust_fit</span>(x, y, wfun, tune):
+</span></span><span style=display:flex><span>    X <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>stack([torch<span style=color:#000;font-weight:700>.</span>ones(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>], ), torch<span style=color:#000;font-weight:700>.</span>tensor(x)], axis<span style=color:#000;font-weight:700>=</span><span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>    Y <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>tensor(y)<span style=color:#000;font-weight:700>.</span>view(<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#099>1</span>)<span style=color:#000;font-weight:700>.</span>float()
+</span></span><span style=display:flex><span>    W <span style=color:#000;font-weight:700>=</span> torch<span style=color:#000;font-weight:700>.</span>eye(x<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>0</span>])
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>if</span> torch<span style=color:#000;font-weight:700>.</span>cuda<span style=color:#000;font-weight:700>.</span>is_available():
+</span></span><span style=display:flex><span>        X <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>cuda()
+</span></span><span style=display:flex><span>        Y <span style=color:#000;font-weight:700>=</span> Y<span style=color:#000;font-weight:700>.</span>cuda()
+</span></span><span style=display:flex><span>        W <span style=color:#000;font-weight:700>=</span> W<span style=color:#000;font-weight:700>.</span>cuda()
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>while</span> <span style=color:#000;font-weight:700>True</span>:
+</span></span><span style=display:flex><span>        beta <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>T<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(X)<span style=color:#000;font-weight:700>.</span>inverse()<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T)<span style=color:#000;font-weight:700>.</span>matmul(W)<span style=color:#000;font-weight:700>.</span>matmul(Y)
+</span></span><span style=display:flex><span>        e <span style=color:#000;font-weight:700>=</span> (Y <span style=color:#000;font-weight:700>-</span> X<span style=color:#000;font-weight:700>.</span>matmul(beta))<span style=color:#000;font-weight:700>.</span>flatten()
+</span></span><span style=display:flex><span>        H <span style=color:#000;font-weight:700>=</span> X<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T<span style=color:#000;font-weight:700>.</span>matmul(X)<span style=color:#000;font-weight:700>.</span>inverse())<span style=color:#000;font-weight:700>.</span>matmul(X<span style=color:#000;font-weight:700>.</span>T)
+</span></span><span style=display:flex><span>        adj_factor <span style=color:#000;font-weight:700>=</span> <span style=color:#099>1</span> <span style=color:#000;font-weight:700>/</span> (<span style=color:#099>1</span> <span style=color:#000;font-weight:700>-</span> H<span style=color:#000;font-weight:700>.</span>diag())<span style=color:#000;font-weight:700>.</span>sqrt()
+</span></span><span style=display:flex><span>        radj <span style=color:#000;font-weight:700>=</span> e <span style=color:#000;font-weight:700>*</span> adj_factor
+</span></span><span style=display:flex><span>        rs <span style=color:#000;font-weight:700>=</span> radj<span style=color:#000;font-weight:700>.</span>abs()<span style=color:#000;font-weight:700>.</span>sort(<span style=color:#099>0</span>)[<span style=color:#099>0</span>][(X<span style=color:#000;font-weight:700>.</span>shape[<span style=color:#099>1</span>] <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>):]
+</span></span><span style=display:flex><span>        i <span style=color:#000;font-weight:700>=</span> rs<span style=color:#000;font-weight:700>.</span>size(<span style=color:#099>0</span>) <span style=color:#000;font-weight:700>//</span> <span style=color:#099>2</span>
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> rs<span style=color:#000;font-weight:700>.</span>size(<span style=color:#099>0</span>) <span style=color:#000;font-weight:700>%</span> <span style=color:#099>2</span> <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span>:
+</span></span><span style=display:flex><span>            med <span style=color:#000;font-weight:700>=</span> (rs[i <span style=color:#000;font-weight:700>-</span> <span style=color:#099>1</span>] <span style=color:#000;font-weight:700>+</span> rs[i]) <span style=color:#000;font-weight:700>/</span> <span style=color:#099>2</span>
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>else</span>:
+</span></span><span style=display:flex><span>            med <span style=color:#000;font-weight:700>=</span> rs[i]
+</span></span><span style=display:flex><span>        s <span style=color:#000;font-weight:700>=</span> med <span style=color:#000;font-weight:700>/</span> <span style=color:#099>0.6745</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        W_new <span style=color:#000;font-weight:700>=</span> wfun(radj <span style=color:#000;font-weight:700>/</span> (s <span style=color:#000;font-weight:700>*</span> tune))
+</span></span><span style=display:flex><span>        <span style=color:#0086b3>print</span>(W_new, beta)
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> torch<span style=color:#000;font-weight:700>.</span>norm(W<span style=color:#000;font-weight:700>.</span>diag() <span style=color:#000;font-weight:700>-</span> W_new<span style=color:#000;font-weight:700>.</span>flatten(), <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>&lt;</span> <span style=color:#099>1e-5</span>:
+</span></span><span style=display:flex><span>            <span style=color:#000;font-weight:700>return</span> beta
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>        W <span style=color:#000;font-weight:700>=</span> W_new<span style=color:#000;font-weight:700>.</span>flatten()<span style=color:#000;font-weight:700>.</span>diag()
+</span></span></code></pre></div><p align=center><img src=/images/irls1.svg></p><h2 id=参考>参考</h2><p>[1] <a href=https://cnx.org/exports/92b90377-2b34-49e4-b26f-7fe572db78a1@12.pdf/iterative-reweighted-least-squares-12.pdf>Iterative Reweighted Least Squares</a></p><p>[2] <a href="https://www.tandfonline.com/doi/pdf/10.1080/03610927708827533?needAccess=true">Robust regression using iteratively reweighted
+least-squares</a></p></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="OpenWrt 网关抓包" rel=next href=/posts/openwrt-trafficdump/><span>后篇</span>OpenWrt 网关抓包</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

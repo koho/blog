@@ -1,0 +1,167 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>使用 MQTT 实现 API 接口 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>使用 MQTT 实现 API 接口</h2><div class=remark><time datetime="2022-03-15 09:28:08 +0800 +0800">2022-03-15</time></div><div class=tags><a href=/tags/golang/>Golang</a></div><div class=markdown-body><p>MQTT (Message Queuing Telemetry Transport Protocol) 消息队列遥测传输协议，是一种轻量级的发布/订阅模式的消息传输协议，运行在 TCP 协议栈之上，为其提供有序、可靠、双向连接的网络连接保证。</p><blockquote><p>MQTT最大优点在于，可以以极少的代码和有限的带宽，为连接远程设备提供实时可靠的消息服务。做为一种低开销、低带宽占用的即时通讯协议，使其在物联网、小型设备、移动应用等方面有较广泛的应用。</p></blockquote><p>最近项目上需要用到 MQTT 采集设备数据，然后项目中的某个应用又需要向外提供接口，项目中的其他应用都需要用到 MQTT，因此想到利用 MQTT 完成多个应用之间的通讯。</p><p>API 接口一般是请求/响应模型，MQTT v5 也开始支持请求响应的模式了，具体的流程如下：</p><p align=center><img src=/images/mqtt-req-resp.png></p><ol><li>请求方在发布消息时包含 <strong>响应主题(Response Topic)</strong> 属性，比如使用客户端标识符 (Client ID)。</li><li>请求方在发布消息时包含 <strong>对比数据(Correlation Data)</strong> 属性，比如使用当前时间戳。请求可以是异步的，如果同时发送多个请求，那请求方需要一个字段来区分响应消息属于哪个请求。</li><li>响应方收到消息后，进行业务处理，处理完成后向该消息的 <strong>响应主题</strong> 属性指定的主题发布响应消息，同时该响应消息的 <strong>对比数据</strong> 属性与请求消息的一致。</li><li>请求方收到响应消息后，根据 <strong>对比数据</strong> 属性把消息转发给对应的请求。</li></ol><h2 id=实现>实现</h2><p>本文使用 <a href=https://github.com/eclipse/paho.golang>github.com/eclipse/paho.golang</a> 这个包举例。</p><h3 id=服务端>服务端</h3><p>服务端的工作和 Web 框架类似，监听多个 Topic，为每个 Topic 指定处理函数。当一个请求到来时，创建新的协程来单独处理业务。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>type</span> Engine <span style=color:#000;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>	Subscriptions <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]paho.SubscribeOptions
+</span></span><span style=display:flex><span>	router        <span style=color:#000;font-weight:700>*</span>paho.StandardRouter
+</span></span><span style=display:flex><span>	cm            <span style=color:#000;font-weight:700>*</span>autopaho.ConnectionManager
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>New</span>() <span style=color:#000;font-weight:700>*</span>Engine {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>&amp;</span>Engine{
+</span></span><span style=display:flex><span>		router:        paho.<span style=color:#900;font-weight:700>NewStandardRouter</span>(),
+</span></span><span style=display:flex><span>		Subscriptions: <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]paho.SubscribeOptions),
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (engine <span style=color:#000;font-weight:700>*</span>Engine) <span style=color:#900;font-weight:700>Route</span>(topic <span style=color:#458;font-weight:700>string</span>, handler <span style=color:#000;font-weight:700>func</span>(<span style=color:#458;font-weight:700>string</span>, []<span style=color:#458;font-weight:700>byte</span>) []<span style=color:#458;font-weight:700>byte</span>) {
+</span></span><span style=display:flex><span>	engine.Subscriptions[topic] = paho.SubscribeOptions{QoS: <span style=color:#099>0</span>}
+</span></span><span style=display:flex><span>	engine.router.<span style=color:#900;font-weight:700>RegisterHandler</span>(topic, <span style=color:#000;font-weight:700>func</span>(publish <span style=color:#000;font-weight:700>*</span>paho.Publish) {
+</span></span><span style=display:flex><span>	    <span style=color:#998;font-style:italic>// 每个请求单独一个协程处理
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>		<span style=color:#000;font-weight:700>go</span> <span style=color:#000;font-weight:700>func</span>() {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>defer</span> <span style=color:#000;font-weight:700>func</span>() {
+</span></span><span style=display:flex><span>				<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>recover</span>(); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>					apiLog.<span style=color:#900;font-weight:700>Error</span>(err)
+</span></span><span style=display:flex><span>				}
+</span></span><span style=display:flex><span>			}()
+</span></span><span style=display:flex><span>			ret <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>handler</span>(publish.Topic, publish.Payload)
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> publish.Properties.ResponseTopic <span style=color:#000;font-weight:700>!=</span> <span style=color:#d14>&#34;&#34;</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> <span style=color:#0086b3>len</span>(ret) &gt; <span style=color:#099>0</span> {
+</span></span><span style=display:flex><span>				engine.cm.<span style=color:#900;font-weight:700>Publish</span>(context.<span style=color:#900;font-weight:700>Background</span>(), <span style=color:#000;font-weight:700>&amp;</span>paho.Publish{
+</span></span><span style=display:flex><span>					QoS:        <span style=color:#099>0</span>,
+</span></span><span style=display:flex><span>					Retain:     <span style=color:#000;font-weight:700>false</span>,
+</span></span><span style=display:flex><span>					Topic:      publish.Properties.ResponseTopic,
+</span></span><span style=display:flex><span>					Payload:    h.ret,
+</span></span><span style=display:flex><span>					Properties: <span style=color:#000;font-weight:700>&amp;</span>paho.PublishProperties{CorrelationData: publish.Properties.CorrelationData},
+</span></span><span style=display:flex><span>				})
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>		}()
+</span></span><span style=display:flex><span>	})
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (engine <span style=color:#000;font-weight:700>*</span>Engine) <span style=color:#900;font-weight:700>Run</span>(mqttUrl, mqttUser, mqttPasswd <span style=color:#458;font-weight:700>string</span>) {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>var</span> err <span style=color:#458;font-weight:700>error</span>
+</span></span><span style=display:flex><span>	u, err <span style=color:#000;font-weight:700>:=</span> url.<span style=color:#900;font-weight:700>Parse</span>(mqttUrl)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	cc <span style=color:#000;font-weight:700>:=</span> autopaho.ClientConfig{
+</span></span><span style=display:flex><span>		BrokerUrls: []<span style=color:#000;font-weight:700>*</span>url.URL{u},
+</span></span><span style=display:flex><span>		KeepAlive:  <span style=color:#099>30</span>,
+</span></span><span style=display:flex><span>		OnConnectionUp: <span style=color:#000;font-weight:700>func</span>(manager <span style=color:#000;font-weight:700>*</span>autopaho.ConnectionManager, connack <span style=color:#000;font-weight:700>*</span>paho.Connack) {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> _, err <span style=color:#000;font-weight:700>:=</span> manager.<span style=color:#900;font-weight:700>Subscribe</span>(context.<span style=color:#900;font-weight:700>Background</span>(), <span style=color:#000;font-weight:700>&amp;</span>paho.Subscribe{Subscriptions: engine.Subscriptions}); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>				engine.cm.<span style=color:#900;font-weight:700>Disconnect</span>(context.<span style=color:#900;font-weight:700>Background</span>())
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>		},
+</span></span><span style=display:flex><span>		OnConnectError: <span style=color:#000;font-weight:700>func</span>(err <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>			log.<span style=color:#900;font-weight:700>Println</span>(err)
+</span></span><span style=display:flex><span>		},
+</span></span><span style=display:flex><span>		ClientConfig: paho.ClientConfig{
+</span></span><span style=display:flex><span>			Router: engine.router,
+</span></span><span style=display:flex><span>		},
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	cc.<span style=color:#900;font-weight:700>SetUsernamePassword</span>(mqttUser, []<span style=color:#0086b3>byte</span>(mqttPasswd))
+</span></span><span style=display:flex><span>	engine.cm, err = autopaho.<span style=color:#900;font-weight:700>NewConnection</span>(context.<span style=color:#900;font-weight:700>Background</span>(), cc)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>使用上就像常见的 Web 框架一样，指定 Topic 和处理函数：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>api <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>New</span>()
+</span></span><span style=display:flex><span>api.<span style=color:#900;font-weight:700>Route</span>(<span style=color:#d14>&#34;devices/+&#34;</span>, <span style=color:#000;font-weight:700>func</span>(topic <span style=color:#458;font-weight:700>string</span>, payload []<span style=color:#458;font-weight:700>byte</span>) []<span style=color:#458;font-weight:700>byte</span> {
+</span></span><span style=display:flex><span>    log.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#0086b3>string</span>(payload))
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> []<span style=color:#0086b3>byte</span>(<span style=color:#d14>&#34;OK&#34;</span>)
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span>api.<span style=color:#900;font-weight:700>Run</span>(<span style=color:#d14>&#34;mqtt://127.0.0.1:1883&#34;</span>, <span style=color:#d14>&#34;user&#34;</span>, <span style=color:#d14>&#34;pass&#34;</span>)
+</span></span></code></pre></div><h3 id=客户端>客户端</h3><p>需要支持异步请求，也就是说多个请求可以同时发出，且它们都共用一条客户端连接。</p><p>关于如何区分响应消息，有两种方法：</p><ul><li>使用 <strong>对比数据</strong> 属性</li><li>使用不同的 <strong>响应主题</strong> 属性</li></ul><p>这里更推荐使用第一种方法。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>type</span> Handler <span style=color:#000;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>	sync.Mutex
+</span></span><span style=display:flex><span>	c          <span style=color:#000;font-weight:700>*</span>paho.Client
+</span></span><span style=display:flex><span>	respTopic  <span style=color:#458;font-weight:700>string</span>
+</span></span><span style=display:flex><span>	correlData <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>chan</span> <span style=color:#000;font-weight:700>*</span>paho.Publish
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>NewHandler</span>(c <span style=color:#000;font-weight:700>*</span>paho.Client) (<span style=color:#000;font-weight:700>*</span>Handler, <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>	h <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>Handler{
+</span></span><span style=display:flex><span>		c:          c,
+</span></span><span style=display:flex><span>		respTopic:  fmt.<span style=color:#900;font-weight:700>Sprintf</span>(<span style=color:#d14>&#34;%s/responses&#34;</span>, c.ClientID),
+</span></span><span style=display:flex><span>		correlData: <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]<span style=color:#000;font-weight:700>chan</span> <span style=color:#000;font-weight:700>*</span>paho.Publish),
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	c.Router.<span style=color:#900;font-weight:700>RegisterHandler</span>(h.respTopic, h.responseHandler)
+</span></span><span style=display:flex><span>	_, err <span style=color:#000;font-weight:700>:=</span> c.<span style=color:#900;font-weight:700>Subscribe</span>(context.<span style=color:#900;font-weight:700>Background</span>(), <span style=color:#000;font-weight:700>&amp;</span>paho.Subscribe{
+</span></span><span style=display:flex><span>		Subscriptions: <span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>]paho.SubscribeOptions{
+</span></span><span style=display:flex><span>			h.respTopic: {QoS: <span style=color:#099>1</span>},
+</span></span><span style=display:flex><span>		},
+</span></span><span style=display:flex><span>	})
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> h, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>Handler) <span style=color:#900;font-weight:700>addCorrelID</span>(cID <span style=color:#458;font-weight:700>string</span>, r <span style=color:#000;font-weight:700>chan</span> <span style=color:#000;font-weight:700>*</span>paho.Publish) {
+</span></span><span style=display:flex><span>	h.<span style=color:#900;font-weight:700>Lock</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>defer</span> h.<span style=color:#900;font-weight:700>Unlock</span>()
+</span></span><span style=display:flex><span>	h.correlData[cID] = r
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>Handler) <span style=color:#900;font-weight:700>getCorrelIDChan</span>(cID <span style=color:#458;font-weight:700>string</span>) <span style=color:#000;font-weight:700>chan</span> <span style=color:#000;font-weight:700>*</span>paho.Publish {
+</span></span><span style=display:flex><span>	h.<span style=color:#900;font-weight:700>Lock</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>defer</span> h.<span style=color:#900;font-weight:700>Unlock</span>()
+</span></span><span style=display:flex><span>	rChan, ok <span style=color:#000;font-weight:700>:=</span> h.correlData[cID]
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> ok {
+</span></span><span style=display:flex><span>		<span style=color:#0086b3>delete</span>(h.correlData, cID)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> rChan
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>Handler) <span style=color:#900;font-weight:700>Request</span>(pb <span style=color:#000;font-weight:700>*</span>paho.Publish) (<span style=color:#000;font-weight:700>*</span>paho.Publish, <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>	cID <span style=color:#000;font-weight:700>:=</span> fmt.<span style=color:#900;font-weight:700>Sprintf</span>(<span style=color:#d14>&#34;%d&#34;</span>, time.<span style=color:#900;font-weight:700>Now</span>().<span style=color:#900;font-weight:700>UnixNano</span>())
+</span></span><span style=display:flex><span>	rChan <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>chan</span> <span style=color:#000;font-weight:700>*</span>paho.Publish, <span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	h.<span style=color:#900;font-weight:700>addCorrelID</span>(cID, rChan)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> pb.Properties <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		pb.Properties = <span style=color:#000;font-weight:700>&amp;</span>paho.PublishProperties{}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	pb.Properties.CorrelationData = []<span style=color:#0086b3>byte</span>(cID)
+</span></span><span style=display:flex><span>	pb.Properties.ResponseTopic = h.respTopic
+</span></span><span style=display:flex><span>	pb.Retain = <span style=color:#000;font-weight:700>false</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	_, err <span style=color:#000;font-weight:700>:=</span> h.c.<span style=color:#900;font-weight:700>Publish</span>(context.<span style=color:#900;font-weight:700>Background</span>(), pb)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>for</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>select</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>case</span> resp <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&lt;-</span>rChan:
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> resp, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>case</span> <span style=color:#000;font-weight:700>&lt;-</span>time.<span style=color:#900;font-weight:700>After</span>(<span style=color:#099>10</span> <span style=color:#000;font-weight:700>*</span> time.Second):
+</span></span><span style=display:flex><span>			h.<span style=color:#900;font-weight:700>getCorrelIDChan</span>(cID)
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, errors.<span style=color:#900;font-weight:700>New</span>(<span style=color:#d14>&#34;timeout error&#34;</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (h <span style=color:#000;font-weight:700>*</span>Handler) <span style=color:#900;font-weight:700>responseHandler</span>(pb <span style=color:#000;font-weight:700>*</span>paho.Publish) {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> pb.Properties <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>||</span> pb.Properties.CorrelationData <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	rChan <span style=color:#000;font-weight:700>:=</span> h.<span style=color:#900;font-weight:700>getCorrelIDChan</span>(<span style=color:#0086b3>string</span>(pb.Properties.CorrelationData))
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> rChan <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	rChan <span style=color:#000;font-weight:700>&lt;-</span> pb
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>这样就如 HTTP 接口一样，实现请求/响应模式：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>h, err <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>NewHandler</span>(client)
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>    <span style=color:#0086b3>panic</span>(err)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>response, err <span style=color:#000;font-weight:700>:=</span> h.<span style=color:#900;font-weight:700>Request</span>(<span style=color:#000;font-weight:700>&amp;</span>paho.Publish{
+</span></span><span style=display:flex><span>	Topic:   <span style=color:#d14>&#34;api/getData&#34;</span>,
+</span></span><span style=display:flex><span>	Payload: []<span style=color:#0086b3>byte</span>(<span style=color:#d14>&#34;dev1&#34;</span>),
+</span></span><span style=display:flex><span>})
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>    <span style=color:#0086b3>panic</span>(err)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>log.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#0086b3>string</span>(response.Payload))
+</span></span></code></pre></div><h2 id=参考>参考</h2><p>[1] <a href=https://www.emqx.com/zh/blog/mqtt5-request-response>请求响应 - MQTT 5.0 新特性</a></p><p>[2] <a href=https://github.com/eclipse/paho.golang>Eclipse Paho for golang</a></p></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="给 exe 添加文件信息" rel=prev href=/posts/file-info-exe/><span>前篇</span>给 exe 添加文件信息</a>
+<a title="理解 RNN" rel=next href=/posts/understanding-rnn/><span>后篇</span>理解 RNN</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div><div class=content id=post-related><h3 class=title>延伸阅读</h3><div class=grid><div class=card><a href=/posts/golang-windows-service/ rel=bookmark><div class=banner style=background-image:url(/images/windowsservices-serviceswindow.png)></div><h4>Golang 程序以 Windows 服务运行</h4><p>2021-11-12</p><div class=tags><span>Golang</span>
+<span>Windows</span></div></a></div><div class=card><a href=/posts/golang-gui-singleton/ rel=bookmark><div class=banner style=background-image:url(/images/multiple-instance-image.jpg)></div><h4>Golang 在 Windows 下防止程序多开</h4><p>2021-10-11</p><div class=tags><span>Golang</span>
+<span>Windows</span></div></a></div></div></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

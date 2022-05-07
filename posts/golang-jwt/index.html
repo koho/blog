@@ -1,0 +1,81 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>Golang 中使用 JWT 进行认证 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>Golang 中使用 JWT 进行认证</h2><div class=remark><time datetime="2021-05-10 13:19:47 +0800 +0800">2021-05-10</time></div><div class=tags><a href=/tags/golang/>Golang</a>
+<a href=/tags/%E5%90%8E%E7%AB%AF/>后端</a></div><div class=markdown-body><p>JSON Web Token (JWT) 是一种目前流行的跨域认证方案，JWT 是基于 JSON 的经过签名的 Token，可以在进行验证的同时附带身份信息，保证传输的信息没有被修改，对于前后端分离项目很有帮助。</p><blockquote><p>JSON Web Token (JWT) 是一个开放标准 (RFC 7519)，它定义了一种紧凑的、自包含的方式，用于作为 JSON 对象在各方之间安全地传输信息。该信息可以被验证和信任，因为它是数字签名的。</p></blockquote><h2 id=原理>原理</h2><p>JWT 的认证流程是，用户登录成功后，服务端生成一个 JWT 格式的 Token，发回给用户，这个 Token 包含了用于标记用户的信息，此后用户与服务端通信时，都携带这个 Token，服务端就能靠这个 Token 确定用户的身份。</p><p>如上面提到，这个 Token 是有签名的，所以可以保证数据不被篡改，是值得信任的。</p><p>JWT 由三部分组成，它们之间用圆点(.)相连。分别为：</p><ul><li>Header（头部）</li><li>Payload（负载）</li><li>Signature（签名）</li></ul><p>最后生成的字符串大概就是这样子的：</p><pre tabindex=0><code>xxx.yyy.zzz
+</code></pre><p>下面简单说一下这三个部分。</p><h3 id=header>Header</h3><p>头部主要用来描述一些元数据。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;alg&#34;</span>: <span style=color:#d14>&#34;HS256&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;typ&#34;</span>: <span style=color:#d14>&#34;JWT&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>主要就包含这两个字段，<code>alg</code>是所使用的签名算法，服务端会使用该算法签名或验证 Token，<code>typ</code>就是类型了，固定为<code>JWT</code>。</p><p>最后使用 Base64URL 算法把这个 JSON 对象转换为字符串。</p><p>可以看到这部分是没有加密的，所以不要放置敏感信息。</p><h3 id=payload>Payload</h3><p>负载部分用来存放实际传递的数据，也就是关于用户的数据，JWT 官方提供了七个预定义的字段：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;iss&#34;</span>: <span style=color:#d14>&#34;签发人&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;exp&#34;</span>: <span style=color:#d14>&#34;过期时间&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;sub&#34;</span>: <span style=color:#d14>&#34;主题&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;aud&#34;</span>: <span style=color:#d14>&#34;受众&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;nbf&#34;</span>: <span style=color:#d14>&#34;生效时间&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;iat&#34;</span>: <span style=color:#d14>&#34;签发时间&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;jti&#34;</span>: <span style=color:#d14>&#34;编号&#34;</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>除此之外，我们可以自己定义需要的字段：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-json data-lang=json><span style=display:flex><span>{
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;uid&#34;</span>: <span style=color:#099>1001</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;name&#34;</span>: <span style=color:#d14>&#34;张三&#34;</span>,
+</span></span><span style=display:flex><span>  <span style=color:navy>&#34;iat&#34;</span>: <span style=color:#099>1516239022</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>最后使用 Base64URL 算法把这个 JSON 对象转换为字符串。</p><p>可以看到这部分是没有加密的，所以不要放置敏感信息。</p><h3 id=signature>Signature</h3><p>最后这部分是对前两个部分的信息进行签名，以防止数据被非法篡改。</p><p>首先，自己生成一个密钥，放在服务端，不能被泄露。使用 Header 里指定的签名算法，按以下规则生成签名：</p><pre tabindex=0><code>签名算法(
+  base64UrlEncode(header) + &#34;.&#34; +
+  base64UrlEncode(payload),
+  your-secret
+)
+</code></pre><h2 id=使用方式>使用方式</h2><p>前端获取到 JWT 后，一般储存在<code>localStorage</code>里面，当需要与服务端通信时，都带上这个 Token。</p><h3 id=https>HTTP(S)</h3><p>常规的 HTTP 接口一般放在请求头的<code>Authorization</code>里面。</p><pre tabindex=0><code>Authorization: Bearer &lt;token&gt;
+</code></pre><h3 id=websocket>WebSocket</h3><p>对于 WebSocket 协议，浏览器内置的 API 似乎无法设置请求头，这里我想到以下几种方案：</p><ul><li>使用第三方 WebSocket 客户端，支持添加<code>Authorization</code>请求头</li><li>在 WebSocket 连接成功后发送 JWT，服务端验证不通过后关闭连接</li><li>使用 WebSocket 子协议放置 JWT</li></ul><p>重点说一下最后一种方法，前端在创建 WebSocket 时可以这样传参：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-js data-lang=js><span style=display:flex><span><span style=color:#000;font-weight:700>new</span> WebSocket(url, [<span style=color:#d14>&#39;token&#39;</span>, <span style=color:#d14>&#39;xxx.yyy.zzz&#39;</span>])
+</span></span></code></pre></div><p>然后浏览器的请求头就会在<code>Sec-WebSocket-Protocol</code>附带上我们的 Token 信息：</p><pre tabindex=0><code>Sec-WebSocket-Protocol: token, xxx.yyy.zzz
+</code></pre><p>服务端就可以取得 Token 判断是否允许建立连接。</p><p>注意：使用这种方法后端也需要开启支持子协议 token。</p><h2 id=示例>示例</h2><p>我使用的是 <a href=https://github.com/dgrijalva/jwt-go>jwt-go</a> 这个库。</p><h3 id=创建-jwt>创建 JWT</h3><p>一般在用户登录成功后创建 JWT 返回给用户，注意以<code>your</code>开头的地方，是需要自己定义的。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Login</span>() <span style=color:#458;font-weight:700>string</span> {
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic>// 验证登录信息
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>    <span style=color:#000;font-weight:700>var</span> user User
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>...</span>
+</span></span><span style=display:flex><span>    
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic>// 创建 Token
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>    token <span style=color:#000;font-weight:700>:=</span> jwt.<span style=color:#900;font-weight:700>NewWithClaims</span>(jwt.<span style=color:#900;font-weight:700>GetSigningMethod</span>(<span style=color:#d14>&#34;HS256&#34;</span>), YourClaims{
+</span></span><span style=display:flex><span>		user.ID,
+</span></span><span style=display:flex><span>		user.UserName,
+</span></span><span style=display:flex><span>		jwt.StandardClaims{
+</span></span><span style=display:flex><span>			IssuedAt: jwt.<span style=color:#900;font-weight:700>Now</span>(),
+</span></span><span style=display:flex><span>		},
+</span></span><span style=display:flex><span>	})
+</span></span><span style=display:flex><span>	<span style=color:#998;font-style:italic>// 签名，把 Token 转换为字符串
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	tokenString, err <span style=color:#000;font-weight:700>:=</span> token.<span style=color:#900;font-weight:700>SignedString</span>(<span style=color:#d14>&#34;yourKey&#34;</span>)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#0086b3>panic</span>(err)
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> tokenString
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=验证-jwt>验证 JWT</h3><p>客户端与服务端后续通信会附带 Token 过来，此时服务端这边需要验证这个 Token 的有效性。本文以 Gin 框架为例。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>CurrentUser</span>() gin.HandlerFunc {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>func</span>(c <span style=color:#000;font-weight:700>*</span>gin.Context) {
+</span></span><span style=display:flex><span>		tokenString <span style=color:#000;font-weight:700>:=</span> c.<span style=color:#900;font-weight:700>GetHeader</span>(<span style=color:#d14>&#34;Authorization&#34;</span>)
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> tokenString <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;&#34;</span> {
+</span></span><span style=display:flex><span>			<span style=color:#998;font-style:italic>// Websocket认证
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>			tokenString = c.<span style=color:#900;font-weight:700>GetHeader</span>(<span style=color:#d14>&#34;Sec-WebSocket-Protocol&#34;</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> strings.<span style=color:#900;font-weight:700>HasPrefix</span>(tokenString, <span style=color:#d14>&#34;Bearer&#34;</span>) {
+</span></span><span style=display:flex><span>			tokenString = strings.<span style=color:#900;font-weight:700>TrimPrefix</span>(tokenString, <span style=color:#d14>&#34;Bearer&#34;</span>)
+</span></span><span style=display:flex><span>		} <span style=color:#000;font-weight:700>else</span> <span style=color:#000;font-weight:700>if</span> strings.<span style=color:#900;font-weight:700>HasPrefix</span>(tokenString, <span style=color:#d14>&#34;token&#34;</span>) {
+</span></span><span style=display:flex><span>			tokenString = strings.<span style=color:#900;font-weight:700>TrimPrefix</span>(tokenString, <span style=color:#d14>&#34;token&#34;</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		tokenString = strings.<span style=color:#900;font-weight:700>TrimSpace</span>(tokenString)
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> tokenString <span style=color:#000;font-weight:700>!=</span> <span style=color:#d14>&#34;&#34;</span> {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> token, err <span style=color:#000;font-weight:700>:=</span> jwt.<span style=color:#900;font-weight:700>ParseWithClaims</span>(tokenString, <span style=color:#000;font-weight:700>&amp;</span>YourClaims{}, 
+</span></span><span style=display:flex><span>			    jwt.<span style=color:#900;font-weight:700>KnownKeyfunc</span>(jwt.<span style=color:#900;font-weight:700>GetSigningMethod</span>(<span style=color:#d14>&#34;HS256&#34;</span>), <span style=color:#d14>&#34;yourKey&#34;</span>)); 
+</span></span><span style=display:flex><span>			    err <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> token.Valid {
+</span></span><span style=display:flex><span>			    <span style=color:#998;font-style:italic>// 验证成功
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>				<span style=color:#000;font-weight:700>if</span> claims, ok <span style=color:#000;font-weight:700>:=</span> token.Claims.(<span style=color:#000;font-weight:700>*</span>YourClaims); ok {
+</span></span><span style=display:flex><span>				    <span style=color:#998;font-style:italic>// 用户 ID
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>				    claims.UID
+</span></span><span style=display:flex><span>				    <span style=color:#998;font-style:italic>// 用户名
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>				    claims.Name
+</span></span><span style=display:flex><span>				}
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		c.<span style=color:#900;font-weight:700>Next</span>()
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="Python 发送 Email 通知" rel=prev href=/posts/python-send-email/><span>前篇</span>Python 发送 Email 通知</a>
+<a title="Python 进行 ARP 欺骗" rel=next href=/posts/python-arpspoof/><span>后篇</span>Python 进行 ARP 欺骗</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div><div class=content id=post-related><h3 class=title>延伸阅读</h3><div class=grid><div class=card><a href=/posts/golang-casbin/ rel=bookmark><div class=banner style=background-image:url(/images/casbin_rabc_dom.jpeg)></div><h4>Golang 使用 Casbin 进行权限管理</h4><p>2021-03-04</p><div class=tags><span>Golang</span>
+<span>后端</span></div></a></div></div></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

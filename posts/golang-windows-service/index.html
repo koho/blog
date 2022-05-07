@@ -1,0 +1,161 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>Golang 程序以 Windows 服务运行 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>Golang 程序以 Windows 服务运行</h2><div class=remark><time datetime="2021-11-12 13:15:06 +0800 +0800">2021-11-12</time></div><div class=tags><a href=/tags/golang/>Golang</a>
+<a href=/tags/windows/>Windows</a></div><div class=markdown-body><p>Windows 服务是运行后台程序的一个很好的选择，可以支持开机自动启动，程序异常退出后自动重启这些实用功能。</p><p>Windows 服务程序有一套自己的机制。如果你不想在你的程序添加任何代码的话，有一些工具可以直接把可执行程序作为 Windows 服务运行，比如 <a href=https://github.com/winsw/winsw>winsw</a>。</p><p>本文介绍的是在 Go 中制作自己的服务程序，主要使用的是 <a href=https://pkg.go.dev/golang.org/x/sys/windows/svc><code>golang.org/x/sys/windows/svc</code></a> 这个包。正如文档所说，实现<code>Handler</code>接口即可，当服务启动时，会调用<code>Execute</code>方法。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>type</span> demoService <span style=color:#000;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (service <span style=color:#000;font-weight:700>*</span>demoService) <span style=color:#900;font-weight:700>Execute</span>(args []<span style=color:#458;font-weight:700>string</span>, r <span style=color:#000;font-weight:700>&lt;-</span><span style=color:#000;font-weight:700>chan</span> svc.ChangeRequest, changes <span style=color:#000;font-weight:700>chan</span><span style=color:#000;font-weight:700>&lt;-</span> svc.Status) (svcSpecificEC <span style=color:#458;font-weight:700>bool</span>, exitCode <span style=color:#458;font-weight:700>uint32</span>) {
+</span></span><span style=display:flex><span>	changes <span style=color:#000;font-weight:700>&lt;-</span> svc.Status{State: svc.StartPending}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>defer</span> <span style=color:#000;font-weight:700>func</span>() {
+</span></span><span style=display:flex><span>		changes <span style=color:#000;font-weight:700>&lt;-</span> svc.Status{State: svc.StopPending}
+</span></span><span style=display:flex><span>		log.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;Shutting down&#34;</span>)
+</span></span><span style=display:flex><span>	}()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic>// 要执行的主程序代码
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>go</span> <span style=color:#900;font-weight:700>yourMainFunc</span>()
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	changes <span style=color:#000;font-weight:700>&lt;-</span> svc.Status{State: svc.Running, Accepts: svc.AcceptStop | svc.AcceptShutdown}
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Println</span>(<span style=color:#d14>&#34;Startup complete&#34;</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>for</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>select</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>case</span> c <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&lt;-</span>r:
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>switch</span> c.Cmd {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>case</span> svc.Stop, svc.Shutdown:
+</span></span><span style=display:flex><span>				<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>case</span> svc.Interrogate:
+</span></span><span style=display:flex><span>				changes <span style=color:#000;font-weight:700>&lt;-</span> c.CurrentStatus
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>default</span>:
+</span></span><span style=display:flex><span>				log.<span style=color:#900;font-weight:700>Printf</span>(<span style=color:#d14>&#34;Unexpected services control request #%d\n&#34;</span>, c)
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><p>实现了该接口后，在主函数里运行服务：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>const</span> svcName = <span style=color:#d14>&#34;demoService&#34;</span>
+</span></span><span style=display:flex><span>svc.<span style=color:#900;font-weight:700>Run</span>(svcName, <span style=color:#000;font-weight:700>&amp;</span>demoService{})
+</span></span></code></pre></div><p>最后这个程序就变成了服务程序了，如果直接在命令行中运行是会报错的，因为它需要运行在服务模式下。当然你可以选择性地判断是否需要以服务形式运行，这样既可以作为服务程序，也可以作为控制台程序。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>inService, err <span style=color:#000;font-weight:700>:=</span> svc.<span style=color:#900;font-weight:700>IsWindowsService</span>()
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	<span style=color:#900;font-weight:700>fatal</span>(err)
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> inService {
+</span></span><span style=display:flex><span>    svc.<span style=color:#900;font-weight:700>Run</span>(svcName, <span style=color:#000;font-weight:700>&amp;</span>demoService{})
+</span></span><span style=display:flex><span>} <span style=color:#000;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic>// Running in console mode
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>}
+</span></span></code></pre></div><h2 id=管理服务>管理服务</h2><p>服务程序需要进行安装，卸载操作，有时还需要查询服务的状态，使用服务管理器可以实现这些操作。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>var</span> cachedServiceManager <span style=color:#000;font-weight:700>*</span>mgr.Mgr
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>serviceManager</span>() (<span style=color:#000;font-weight:700>*</span>mgr.Mgr, <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> cachedServiceManager <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> cachedServiceManager, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	m, err <span style=color:#000;font-weight:700>:=</span> mgr.<span style=color:#900;font-weight:700>Connect</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	cachedServiceManager = m
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> cachedServiceManager, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=安装服务>安装服务</h3><p>本文演示的是，如果系统已经安装了服务，则删除后重新安装。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>InstallService</span>() <span style=color:#458;font-weight:700>error</span> {
+</span></span><span style=display:flex><span>	m, err <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>serviceManager</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	path, err <span style=color:#000;font-weight:700>:=</span> os.<span style=color:#900;font-weight:700>Executable</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	service, err <span style=color:#000;font-weight:700>:=</span> m.<span style=color:#900;font-weight:700>OpenService</span>(svcName)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>==</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		status, err <span style=color:#000;font-weight:700>:=</span> service.<span style=color:#900;font-weight:700>Query</span>()
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>			service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> status.State <span style=color:#000;font-weight:700>!=</span> svc.Stopped <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>			service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> errors.<span style=color:#900;font-weight:700>New</span>(<span style=color:#d14>&#34;service already installed and running&#34;</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		err = service.<span style=color:#900;font-weight:700>Delete</span>()
+</span></span><span style=display:flex><span>		service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>for</span> {
+</span></span><span style=display:flex><span>			service, err = m.<span style=color:#900;font-weight:700>OpenService</span>(svcName)
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>				<span style=color:#000;font-weight:700>break</span>
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> service <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>				service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>			time.<span style=color:#900;font-weight:700>Sleep</span>(time.Second <span style=color:#000;font-weight:700>/</span> <span style=color:#099>3</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	conf <span style=color:#000;font-weight:700>:=</span> mgr.Config{
+</span></span><span style=display:flex><span>		ServiceType:  windows.SERVICE_WIN32_OWN_PROCESS,
+</span></span><span style=display:flex><span>		StartType:    mgr.StartAutomatic,
+</span></span><span style=display:flex><span>		ErrorControl: mgr.ErrorNormal,
+</span></span><span style=display:flex><span>		DisplayName:  <span style=color:#d14>&#34;Demo Service&#34;</span>,
+</span></span><span style=display:flex><span>		Description:  <span style=color:#d14>&#34;This is a demo service&#34;</span>,
+</span></span><span style=display:flex><span>		SidType:      windows.SERVICE_SID_TYPE_UNRESTRICTED,
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	service, err = m.<span style=color:#900;font-weight:700>CreateService</span>(svcName, path, conf)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	err = service.<span style=color:#900;font-weight:700>Start</span>()
+</span></span><span style=display:flex><span>	service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=卸载服务>卸载服务</h3><p>停止并卸载服务，参数<code>wait</code>指定是否等待服务停止。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>UninstallService</span>(wait <span style=color:#458;font-weight:700>bool</span>) <span style=color:#458;font-weight:700>error</span> {
+</span></span><span style=display:flex><span>	m, err <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>serviceManager</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	service, err <span style=color:#000;font-weight:700>:=</span> m.<span style=color:#900;font-weight:700>OpenService</span>(svcName)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	service.<span style=color:#900;font-weight:700>Control</span>(svc.Stop)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> wait {
+</span></span><span style=display:flex><span>		try <span style=color:#000;font-weight:700>:=</span> <span style=color:#099>0</span>
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>for</span> {
+</span></span><span style=display:flex><span>			time.<span style=color:#900;font-weight:700>Sleep</span>(time.Second <span style=color:#000;font-weight:700>/</span> <span style=color:#099>3</span>)
+</span></span><span style=display:flex><span>			try<span style=color:#000;font-weight:700>++</span>
+</span></span><span style=display:flex><span>			status, err <span style=color:#000;font-weight:700>:=</span> service.<span style=color:#900;font-weight:700>Query</span>()
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>				<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>if</span> status.ProcessId <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> <span style=color:#000;font-weight:700>||</span> try <span style=color:#000;font-weight:700>&gt;=</span> <span style=color:#099>3</span> {
+</span></span><span style=display:flex><span>				<span style=color:#000;font-weight:700>break</span>
+</span></span><span style=display:flex><span>			}
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	err = service.<span style=color:#900;font-weight:700>Delete</span>()
+</span></span><span style=display:flex><span>	err2 <span style=color:#000;font-weight:700>:=</span> service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> err2
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h3 id=查询服务>查询服务</h3><p>查询服务是否正在运行，从返回的<code>error</code>可以判断服务是否存在。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>QueryService</span>() (<span style=color:#458;font-weight:700>bool</span>, <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>	m, err <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>serviceManager</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	service, err <span style=color:#000;font-weight:700>:=</span> m.<span style=color:#900;font-weight:700>OpenService</span>(svcName)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>defer</span> service.<span style=color:#900;font-weight:700>Close</span>()
+</span></span><span style=display:flex><span>	status, err <span style=color:#000;font-weight:700>:=</span> service.<span style=color:#900;font-weight:700>Query</span>()
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>false</span>, err
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> status.State <span style=color:#000;font-weight:700>!=</span> svc.Stopped <span style=color:#000;font-weight:700>&amp;&amp;</span> err <span style=color:#000;font-weight:700>!=</span> windows.ERROR_SERVICE_MARKED_FOR_DELETE, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="Golang 在 Windows 下防止程序多开" rel=prev href=/posts/golang-gui-singleton/><span>前篇</span>Golang 在 Windows 下防止程序多开</a>
+<a title="Linux 部署 Nginx" rel=next href=/posts/linux-nginx-deploy/><span>后篇</span>Linux 部署 Nginx</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div><div class=content id=post-related><h3 class=title>延伸阅读</h3><div class=grid><div class=card><a href=/posts/golang-gui-singleton/ rel=bookmark><div class=banner style=background-image:url(/images/multiple-instance-image.jpg)></div><h4>Golang 在 Windows 下防止程序多开</h4><p>2021-10-11</p><div class=tags><span>Golang</span>
+<span>Windows</span></div></a></div><div class=card><a href=/posts/golang-service-property/ rel=bookmark><div class=banner style=background-image:url(/images/windows-service-properties.webp)></div><h4>Golang 打开 Windows 服务属性窗口</h4><p>2021-08-01</p><div class=tags><span>Golang</span>
+<span>Windows</span></div></a></div></div></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

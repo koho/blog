@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>2020 on xhat's Blog</title><link>https://xhat.org/archives/2020/</link><description>Recent content in 2020 on xhat's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 30 Nov 2020 13:17:00 +0800</lastBuildDate><atom:link href="https://xhat.org/archives/2020/index.xml" rel="self" type="application/rss+xml"/><item><title>加权最小二乘</title><link>https://xhat.org/posts/introduce-to-weighted-least-squares/</link><pubDate>Mon, 30 Nov 2020 13:17:00 +0800</pubDate><guid>https://xhat.org/posts/introduce-to-weighted-least-squares/</guid><description>介绍 多元线性回归模型的关系式为：
+$$ y_i= \beta_0+\beta_1 x_{i1}+\beta_2 x_{i2} + \dots + \beta_p x_{ip} + \epsilon_i $$ 假设随机误差项 $\epsilon_i(i=1,\dots,n)$满足
+$$ E(\epsilon_i) = 0,\quad \text{Cov}(\epsilon_i,\epsilon_j)=\begin{cases} \sigma^2, &amp; i=j, \\ 0, &amp; i \ne j. \end{cases} $$ 上式通常称为高斯-马尔可夫条件。随机误差$\epsilon_i$的协方差为零表明随机误差项在不同的样本点之间是不相关的(在正态条件下即为独立)。随机误差项$\epsilon_i$在不同的样本点有相同的方差表明各次观测之间有相同的精度。
+多元线性回归模型改写成矩阵形式如下：
+$$ Y=X\mathbf{\beta}+\epsilon,\quad \epsilon\sim\mathbf{N}(0,\sigma^2I_n) $$ 最小二乘估计 最小二乘估计(LSE)就是找$\beta_0,\beta_1,\dots,\beta_p$ ，使离差平方和
+$$ Q(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2 $$ 达到最小，写成矩阵形式如下：
+$$ Q(\beta)= (Y-X\beta)^T(Y-X\beta) $$ 上式中每个平方项的权数相同，是普通最小二乘回归参数估计方法。在误差项$\epsilon_i$等方差不相关的条件下，普通最小二乘估计是回归参数的最小方差线性无偏估计。
+加权最小二乘 然而在异方差的条件下，平和和中的每一项的地位是不相同的。误差项$\epsilon_i$的方差$\sigma_i^2$大的项，在上式平方和中的取值就偏大，在平方和中的作用就大，因而普通最小二乘估计的回归线就被拉向方差大的项，方差大的项的拟合程度就好，而方差小的项拟合程度就差。由此求出的$\hat{\beta_0},\hat{\beta_1},\dots,\hat{\beta_p}$ 仍然是$\beta_0,\beta_1,\dots,\beta_p$ 的无偏估计，但不再是最小方差线性无偏估计。
+加权最小二乘估计的方法是在平方和中加入一个适当的权数$w_i$，以调整各项在平方和中的作用，加权最小二乘的离差平方和为：
+$$ Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^nw_i(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2 $$ 类似地，目标也是寻找$\hat{\beta}$使上式的离差平方和$Q_w$达到最小。上式可以改写为：
+$$ Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(\sqrt{w_i}y_i-\sqrt{w_i}\beta_0-\sqrt{w_i}\beta_1x_{i1}-\dots-\sqrt{w_i}\beta_px_{ip})^2 $$ 展开为原始的模型式为：
+$$ \sqrt{w_i}y_i= \sqrt{w_i}\beta_0+\sqrt{w_i}\beta_1 x_{i1}+\sqrt{w_i}\beta_2 x_{i2} + \dots + \sqrt{w_i}\beta_p x_{ip} + \sqrt{w_i}\epsilon_i $$ 令$\epsilon_i^*=\sqrt{w_i}\epsilon_i$ , 此时模型中随机误差项的方差为</description></item></channel></rss>

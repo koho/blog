@@ -1,0 +1,152 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>Golang 使用 Casbin 进行权限管理 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>Golang 使用 Casbin 进行权限管理</h2><div class=remark><time datetime="2021-03-04 01:18:53 +0800 +0800">2021-03-04</time></div><div class=tags><a href=/tags/golang/>Golang</a>
+<a href=/tags/%E5%90%8E%E7%AB%AF/>后端</a></div><div class=markdown-body><p>先说需求，设计一个基于角色的权限控制系统，满足以下几个规则：</p><ul><li>单独配置某个角色对某个资源的访问权限</li><li>一个用户可拥有多个角色</li><li>可对角色进行禁用或启用</li><li>各个角色之间的权限为并集，且只要有一个角色有权限，该用户就有权限操作</li><li>可对一个菜单下的某些重要功能做单独控制，当用户有该菜单的访问权限，没有功能访问权限时，依然能访问该菜单下的非功能接口</li></ul><p><a href=https://casbin.org/>Casbin</a> 是一个强大的、高效的开源访问控制框架，其权限管理机制支持多种访问控制模型。</p><p>具体支持的模型官网有详细描述，回到本例应该使用的模型是RBAC (基于角色的访问控制)。</p><p>Casbin使用配置文件来设置访问控制模式。它有两个配置文件，<code>model.conf</code>和<code>policy.csv</code>。 其中，<code>model.conf</code>存储了访问模型，<code>policy.csv</code>存储了特定的用户权限配置。</p><h2 id=模型>模型</h2><p>Casbin 将访问控制模型抽象为基于PERM(Policy, Effect, Request, Matcher)的一个文件，分别为：</p><ul><li>策略</li><li>效果</li><li>请求</li><li>匹配器</li></ul><p>基于角色的访问控制需要在此基础上加多一个<code>role_definition</code>进行角色的定义。</p><h3 id=请求request_definition>请求(request_definition)</h3><p>该部分用于请求的定义，经典的三元组：访问实体 (Subject)，访问资源 (Object) 和访问方法 (Action)，也可以根据自己的需求进行增加或删除字段。后端常用的控制请求就是<code>uid, /api/res1, GET</code>。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[request_definition]</span>
+</span></span><span style=display:flex><span><span style=color:teal>r</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>sub, obj, act</span>
+</span></span></code></pre></div><h3 id=策略policy_definition>策略(policy_definition)</h3><p>该部分定义控制策略的模板，哪个实体对哪个资源有怎样的权限。注意：这里的<code>sub, obj</code>不一定需要与请求里面的值一致，具体怎样匹配是匹配器定义的。例如这里的一条策略可以是<code>alice, res1, allow</code>。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[policy_definition]</span>
+</span></span><span style=display:flex><span><span style=color:teal>p</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>sub, obj, eft</span>
+</span></span></code></pre></div><h3 id=角色定义role_definition>角色定义(role_definition)</h3><p>该部分定义了角色系统，用户可以具有角色及其继承关系, 资源也可以具有角色及其继承关系。 这两个 RBAC 系统不会互相干扰。这里我使用了三个角色系统：<code>g</code>是用户和角色的从属关系；<code>g2</code>是资源的从属关系；<code>g3</code>是角色的开关。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[role_definition]</span>
+</span></span><span style=display:flex><span><span style=color:teal>g</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>_, _</span>
+</span></span><span style=display:flex><span><span style=color:teal>g2</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>_, _, _</span>
+</span></span><span style=display:flex><span><span style=color:teal>g3</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>_, _</span>
+</span></span></code></pre></div><p>举个例子，<code>g</code>可以是<code>user_1, 1</code>，表示<code>uid</code>是 1 的用户拥有角色 1。<code>g2</code>可以理解为将多个接口组成一个资源组，角色拥有该资源组的权限则有这些接口的访问权限。</p><pre tabindex=0><code>/api/order/info/*, resOrder, GET
+/api/order/del, resOrder, POST
+/api/task/add, resTask, *
+</code></pre><p>可以看到上面有两个资源组，只要在策略配置对资源组的访问权限则可批量控制接口的权限了。
+最后一个<code>g3</code>更易理解，<code>2, 1</code>可以表示角色 2 是启用的，反之，<code>2, 0</code>则角色 2 被禁用。</p><h3 id=匹配器matchers>匹配器(matchers)</h3><p>顾名思义，匹配器就是定义如何匹配规则的。我这里进行了三个部分的检查：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[matchers]</span>
+</span></span><span style=display:flex><span><span style=color:teal>m</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>g(r.sub, p.sub) &amp;&amp; g2(r.obj, p.obj, r.act) &amp;&amp; g3(p.sub, &#34;1&#34;)</span>
+</span></span></code></pre></div><p>第一部分<code>g(r.sub, p.sub)</code>是检查角色关系的，策略<code>p</code>里定义的实体是角色，请求<code>r</code>里定义是实体是用户，在角色系统<code>g</code>里检查用户角色从属关系。</p><p>第二部分<code>g2(r.obj, p.obj, r.act)</code>是检查资源关系的，请求<code>r</code>里的最后两个元素<code>r.obj</code>和<code>r.act</code>，在这个例子分别代表请求 url 和请求方法，<code>p.obj</code>则是策略里定义的资源组，在角色系统<code>g2</code>里检查资源从属关系。</p><p>第三部分<code>g3(p.sub, "1")</code>是检查角色是否启用，在角色系统<code>g3</code>里检查。</p><h3 id=效果policy_effect>效果(policy_effect)</h3><p>策略效果的定义。它确定如果多项策略规则与请求相符，是否应批准访问请求。例如，一项规则允许，另一项规则则加以拒绝。</p><p>现在我们考虑实现最后一个需求，可以把非功能接口都放在同一个资源组中，而每个功能用的接口都独立为一个资源组。例如查看属于非功能，编辑和删除属于功能：</p><pre tabindex=0><code># 非功能性
+/api/order/info, order, GET
+/api/order/list, order, GET
+# 编辑功能
+/api/order/edit, editOrder, POST
+# 删除功能
+/api/order/del, delOrder, POST
+</code></pre><p>这样，当角色有菜单权限时，则赋予<code>order</code>资源权限；当有编辑功能权限时，则赋予<code>editOrder</code>资源权限。此时需要策略效果是，如果有任何匹配的策略规则允许, 最终效果是允许。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[policy_effect]</span>
+</span></span><span style=display:flex><span><span style=color:teal>e</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>some(where (p.eft == allow))</span>
+</span></span></code></pre></div><p>而且这种策略效果和倒数第二点需求相呼应。</p><p>要说不足的地方，可能是每次添加接口，都需要把该接口添加到规则里面。当然你可以用通配符，但非功能性接口可能比较零散，很多接口一开始已经写好了，很难有<code>/api/order/public/*</code>这种匹配所有非功能性。</p><p>这里我们也可以换一个思路，先匹配该菜单下的所有接口，再检查功能性接口是否有权限。</p><pre tabindex=0><code># 菜单入口
+/api/order/*, order, *
+# 编辑功能
+/api/order/edit, editOrder, POST
+# 删除功能
+/api/order/del, delOrder, POST
+</code></pre><p>这时对于编辑功能，它既匹配菜单入口，也匹配编辑功能。当所有匹配的都允许，没有一个拒绝时，最终效果是允许。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[policy_effect]</span>
+</span></span><span style=display:flex><span><span style=color:teal>e</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>some(where (p.eft == allow)) &amp;&amp; !some(where (p.eft == deny))</span>
+</span></span></code></pre></div><p>这意味着至少有一个匹配的策略规则允许，并且没有匹配的否定的策略规则。</p><p>但这样做的话倒数第二点需求就无法满足了，当一个角色有权限，另一个无权限，按照这种效果判断是拒绝的。如果继续这种思路，我们需要自定义效果决策。</p><p>使用分组的思想，角色内的效果决策我们依然选择上面的决策，但角色之间的效果决策我们却使用第一种效果决策，有点像两种方法的结合。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-ini data-lang=ini><span style=display:flex><span><span style=color:#000;font-weight:700>[policy_effect]</span>
+</span></span><span style=display:flex><span><span style=color:teal>e</span> <span style=color:#000;font-weight:700>=</span> <span style=color:#d14>some(where (p.eft == allow)) &amp;&amp; !some(where (p.eft == deny)) / some(where (p.eft == allow))</span>
+</span></span></code></pre></div><p>注意这个分隔符<code>/</code>，这是我们自己自定义的，分隔符左边代表角色内的决策，分隔符右边代表角色之间的决策。然后我们需要自己实现这个分组决策器。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>package</span> acl
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>import</span> (
+</span></span><span style=display:flex><span>	<span style=color:#d14>&#34;github.com/casbin/casbin/v2&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#d14>&#34;github.com/casbin/casbin/v2/effector&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#d14>&#34;log&#34;</span>
+</span></span><span style=display:flex><span>	<span style=color:#d14>&#34;strings&#34;</span>
+</span></span><span style=display:flex><span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>Partition</span>(s <span style=color:#458;font-weight:700>string</span>, sep <span style=color:#458;font-weight:700>string</span>) (<span style=color:#458;font-weight:700>string</span>, <span style=color:#458;font-weight:700>string</span>, <span style=color:#458;font-weight:700>string</span>) {
+</span></span><span style=display:flex><span>	parts <span style=color:#000;font-weight:700>:=</span> strings.<span style=color:#900;font-weight:700>SplitN</span>(s, sep, <span style=color:#099>2</span>)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> <span style=color:#0086b3>len</span>(parts) <span style=color:#000;font-weight:700>==</span> <span style=color:#099>1</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> parts[<span style=color:#099>0</span>], <span style=color:#d14>&#34;&#34;</span>, <span style=color:#d14>&#34;&#34;</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> parts[<span style=color:#099>0</span>], sep, parts[<span style=color:#099>1</span>]
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>type</span> GroupEffector <span style=color:#000;font-weight:700>struct</span> {
+</span></span><span style=display:flex><span>	defaultEffector effector.DefaultEffector
+</span></span><span style=display:flex><span>	enforcer        <span style=color:#000;font-weight:700>*</span>casbin.Enforcer
+</span></span><span style=display:flex><span>	innerExpr       <span style=color:#458;font-weight:700>string</span> <span style=color:#998;font-style:italic>// 角色内策略
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	interExpr       <span style=color:#458;font-weight:700>string</span> <span style=color:#998;font-style:italic>// 角色间策略
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> <span style=color:#900;font-weight:700>NewGroupEffector</span>(e <span style=color:#000;font-weight:700>*</span>casbin.Enforcer) <span style=color:#000;font-weight:700>*</span>GroupEffector {
+</span></span><span style=display:flex><span>	obj <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>&amp;</span>GroupEffector{}
+</span></span><span style=display:flex><span>	obj.enforcer = e
+</span></span><span style=display:flex><span>	lExpr, sep, rExpr <span style=color:#000;font-weight:700>:=</span> <span style=color:#900;font-weight:700>Partition</span>(e.<span style=color:#900;font-weight:700>GetModel</span>()[<span style=color:#d14>&#34;e&#34;</span>][<span style=color:#d14>&#34;e&#34;</span>].Value, <span style=color:#d14>&#34;/&#34;</span>)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> sep <span style=color:#000;font-weight:700>==</span> <span style=color:#d14>&#34;&#34;</span> {
+</span></span><span style=display:flex><span>		log.<span style=color:#900;font-weight:700>Fatal</span>(<span style=color:#d14>&#34;invalid effector expression&#34;</span>)
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	obj.innerExpr = strings.<span style=color:#900;font-weight:700>TrimSpace</span>(lExpr)
+</span></span><span style=display:flex><span>	obj.interExpr = strings.<span style=color:#900;font-weight:700>TrimSpace</span>(rExpr)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> obj
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>func</span> (g <span style=color:#000;font-weight:700>*</span>GroupEffector) <span style=color:#900;font-weight:700>MergeEffects</span>(expr <span style=color:#458;font-weight:700>string</span>, effects []effector.Effect, matches []<span style=color:#458;font-weight:700>float64</span>, policyIndex <span style=color:#458;font-weight:700>int</span>, policyLength <span style=color:#458;font-weight:700>int</span>) (effector.Effect, <span style=color:#458;font-weight:700>int</span>, <span style=color:#458;font-weight:700>error</span>) {
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>if</span> policyIndex &lt; policyLength<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span> {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>return</span> effector.Indeterminate, <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#000;font-weight:700>nil</span>
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	policy <span style=color:#000;font-weight:700>:=</span> g.enforcer.<span style=color:#900;font-weight:700>GetModel</span>()[<span style=color:#d14>&#34;p&#34;</span>][<span style=color:#d14>&#34;p&#34;</span>].Policy
+</span></span><span style=display:flex><span>	<span style=color:#998;font-style:italic>// 对策略按角色分组
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	groupResult <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>(<span style=color:#000;font-weight:700>map</span>[<span style=color:#458;font-weight:700>string</span>][]<span style=color:#458;font-weight:700>int</span>)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> effects {
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> matches[i] <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span> {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>continue</span>
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		group <span style=color:#000;font-weight:700>:=</span> policy[i][<span style=color:#099>0</span>]
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> idx, ok <span style=color:#000;font-weight:700>:=</span> groupResult[group]; ok {
+</span></span><span style=display:flex><span>			groupResult[group] = <span style=color:#0086b3>append</span>(idx, i)
+</span></span><span style=display:flex><span>		} <span style=color:#000;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>			groupResult[group] = []<span style=color:#458;font-weight:700>int</span>{i}
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	interEffects <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]effector.Effect, <span style=color:#099>0</span>, <span style=color:#0086b3>len</span>(groupResult))
+</span></span><span style=display:flex><span>	interMatches <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]<span style=color:#458;font-weight:700>float64</span>, <span style=color:#099>0</span>, <span style=color:#0086b3>len</span>(groupResult))
+</span></span><span style=display:flex><span>	<span style=color:#998;font-style:italic>// 组内策略决策
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	<span style=color:#000;font-weight:700>for</span> _, idx <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> groupResult {
+</span></span><span style=display:flex><span>		groupEffects <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]effector.Effect, <span style=color:#0086b3>len</span>(idx))
+</span></span><span style=display:flex><span>		groupMatches <span style=color:#000;font-weight:700>:=</span> <span style=color:#0086b3>make</span>([]<span style=color:#458;font-weight:700>float64</span>, <span style=color:#0086b3>len</span>(idx))
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>for</span> i, j <span style=color:#000;font-weight:700>:=</span> <span style=color:#000;font-weight:700>range</span> idx {
+</span></span><span style=display:flex><span>			groupEffects[i] = effects[j]
+</span></span><span style=display:flex><span>			groupMatches[i] = matches[j]
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		r, e, err <span style=color:#000;font-weight:700>:=</span> g.defaultEffector.<span style=color:#900;font-weight:700>MergeEffects</span>(g.innerExpr, groupEffects, groupMatches, <span style=color:#0086b3>len</span>(groupEffects)<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#0086b3>len</span>(groupEffects))
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>			<span style=color:#000;font-weight:700>return</span> r, e, err
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>		interEffects = <span style=color:#0086b3>append</span>(interEffects, r)
+</span></span><span style=display:flex><span>		<span style=color:#000;font-weight:700>if</span> r <span style=color:#000;font-weight:700>!=</span> effector.Indeterminate {
+</span></span><span style=display:flex><span>			interMatches = <span style=color:#0086b3>append</span>(interMatches, <span style=color:#099>1</span>)
+</span></span><span style=display:flex><span>		} <span style=color:#000;font-weight:700>else</span> {
+</span></span><span style=display:flex><span>			interMatches = <span style=color:#0086b3>append</span>(interMatches, <span style=color:#099>0</span>)
+</span></span><span style=display:flex><span>		}
+</span></span><span style=display:flex><span>	}
+</span></span><span style=display:flex><span>	<span style=color:#998;font-style:italic>// 组间策略决策
+</span></span></span><span style=display:flex><span><span style=color:#998;font-style:italic></span>	r, _, err <span style=color:#000;font-weight:700>:=</span> g.defaultEffector.<span style=color:#900;font-weight:700>MergeEffects</span>(g.interExpr, interEffects, interMatches, <span style=color:#0086b3>len</span>(interEffects)<span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, <span style=color:#0086b3>len</span>(interEffects))
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span> r, <span style=color:#000;font-weight:700>-</span><span style=color:#099>1</span>, err
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><h2 id=策略>策略</h2><p>简单来说，上面的模型像是定义了一种模板，这里的策略就像具体的数据了。这些策略可以存储在文件中，比如<code>csv</code>文件，也可以存储在数据库表中。对于后端开发最常用的就是数据库了。</p><p>表的结构类似这样：</p><table><thead><tr><th>id</th><th>ptype</th><th>v0</th><th>v1</th><th>v2</th><th>v3</th><th>v4</th><th>v5</th></tr></thead><tbody><tr><td>1</td><td>p</td><td>1</td><td>order</td><td>allow</td><td></td><td></td><td></td></tr><tr><td>2</td><td>p</td><td>1</td><td>editOrder</td><td>deny</td><td></td><td></td><td></td></tr><tr><td>3</td><td>g</td><td>user_1</td><td>1</td><td></td><td></td><td></td><td></td></tr><tr><td>4</td><td>g2</td><td>/api/order/*</td><td>order</td><td>*</td><td></td><td></td><td></td></tr><tr><td>5</td><td>g2</td><td>/api/order/edit</td><td>editOrder</td><td>POST</td><td></td><td></td><td></td></tr><tr><td>6</td><td>g3</td><td>1</td><td>1</td><td></td><td></td><td></td><td></td></tr></tbody></table><p>把模型的数据都写到这张表中，Casbin有接口可以方便地操作这个策略表。</p><h2 id=如何使用>如何使用</h2><p>具体流程比较简单，在程序启动时设定模型的定义信息，初始化策略存储的适配器，利用 Casbin 的接口创建<code>Enforcer</code>，后续就可以通过<code>Enforcer</code>进行权限管理了。</p><ol><li>创建策略存储适配器</li></ol><p>在 Casbin 中，策略存储作为适配器实现，文档里有目前支持的<a href=https://casbin.org/docs/zh-CN/adapters>适配器列表</a>。本例使用的是 Gorm Adapter。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> adapter, err = gormadapter.<span style=color:#900;font-weight:700>NewAdapterByDB</span>(yourDB); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><ol start=2><li>创建模型</li></ol><p>将上面定义的模型写到字符串中，使用 Casbin 的接口创建模型。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>const</span> rbac = <span style=color:#d14>`[request_definition]
+</span></span></span><span style=display:flex><span><span style=color:#d14>...
+</span></span></span><span style=display:flex><span><span style=color:#d14>`</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> acModel, err = model.<span style=color:#900;font-weight:700>NewModelFromString</span>(rbac); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><ol start=3><li>创建执行器</li></ol><p>后面就可以通过调用这个执行器的方法操作策略了，比如添加/删除/更新角色和策略规则之类的。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> Enforcer, err = casbin.<span style=color:#900;font-weight:700>NewEnforcer</span>(); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err = Enforcer.<span style=color:#900;font-weight:700>InitWithModelAndAdapter</span>(acModel, adapter); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span></code></pre></div><ol start=4><li>初始化设置</li></ol><p>对执行器执行一些初始化设置，比如加载策略，设定自定义的效果器等。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-go data-lang=go><span style=display:flex><span>Enforcer.<span style=color:#900;font-weight:700>AddNamedMatchingFunc</span>(<span style=color:#d14>&#34;g2&#34;</span>, <span style=color:#d14>&#34;KeyMatch2&#34;</span>, util.KeyMatch2)
+</span></span><span style=display:flex><span>Enforcer.<span style=color:#900;font-weight:700>AddNamedDomainMatchingFunc</span>(<span style=color:#d14>&#34;g2&#34;</span>, <span style=color:#d14>&#34;KeyMatch2&#34;</span>, util.KeyMatch2)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err = Enforcer.<span style=color:#900;font-weight:700>BuildRoleLinks</span>(); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>if</span> err = Enforcer.<span style=color:#900;font-weight:700>LoadPolicy</span>(); err <span style=color:#000;font-weight:700>!=</span> <span style=color:#000;font-weight:700>nil</span> {
+</span></span><span style=display:flex><span>	log.<span style=color:#900;font-weight:700>Fatal</span>(err)
+</span></span><span style=display:flex><span>	<span style=color:#000;font-weight:700>return</span>
+</span></span><span style=display:flex><span>}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>Enforcer.<span style=color:#900;font-weight:700>SetEffector</span>(<span style=color:#900;font-weight:700>NewGroupEffector</span>(Enforcer))
+</span></span></code></pre></div></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="OpenWrt + Pon Stick 配置教程" rel=prev href=/posts/openwrt-pon-stick/><span>前篇</span>OpenWrt + Pon Stick 配置教程</a>
+<a title="Python 发送 Email 通知" rel=next href=/posts/python-send-email/><span>后篇</span>Python 发送 Email 通知</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

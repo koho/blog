@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>后端 on xhat's Blog</title><link>https://xhat.org/tags/%E5%90%8E%E7%AB%AF/</link><description>Recent content in 后端 on xhat's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 10 May 2021 13:19:47 +0800</lastBuildDate><atom:link href="https://xhat.org/tags/%E5%90%8E%E7%AB%AF/index.xml" rel="self" type="application/rss+xml"/><item><title>Golang 中使用 JWT 进行认证</title><link>https://xhat.org/posts/golang-jwt/</link><pubDate>Mon, 10 May 2021 13:19:47 +0800</pubDate><guid>https://xhat.org/posts/golang-jwt/</guid><description>JSON Web Token (JWT) 是一种目前流行的跨域认证方案，JWT 是基于 JSON 的经过签名的 Token，可以在进行验证的同时附带身份信息，保证传输的信息没有被修改，对于前后端分离项目很有帮助。
+JSON Web Token (JWT) 是一个开放标准 (RFC 7519)，它定义了一种紧凑的、自包含的方式，用于作为 JSON 对象在各方之间安全地传输信息。该信息可以被验证和信任，因为它是数字签名的。
+原理 JWT 的认证流程是，用户登录成功后，服务端生成一个 JWT 格式的 Token，发回给用户，这个 Token 包含了用于标记用户的信息，此后用户与服务端通信时，都携带这个 Token，服务端就能靠这个 Token 确定用户的身份。
+如上面提到，这个 Token 是有签名的，所以可以保证数据不被篡改，是值得信任的。
+JWT 由三部分组成，它们之间用圆点(.)相连。分别为：
+Header（头部） Payload（负载） Signature（签名） 最后生成的字符串大概就是这样子的：
+xxx.yyy.zzz 下面简单说一下这三个部分。
+Header 头部主要用来描述一些元数据。
+{ &amp;#34;alg&amp;#34;: &amp;#34;HS256&amp;#34;, &amp;#34;typ&amp;#34;: &amp;#34;JWT&amp;#34; } 主要就包含这两个字段，alg是所使用的签名算法，服务端会使用该算法签名或验证 Token，typ就是类型了，固定为JWT。
+最后使用 Base64URL 算法把这个 JSON 对象转换为字符串。
+可以看到这部分是没有加密的，所以不要放置敏感信息。
+Payload 负载部分用来存放实际传递的数据，也就是关于用户的数据，JWT 官方提供了七个预定义的字段：
+{ &amp;#34;iss&amp;#34;: &amp;#34;签发人&amp;#34;, &amp;#34;exp&amp;#34;: &amp;#34;过期时间&amp;#34;, &amp;#34;sub&amp;#34;: &amp;#34;主题&amp;#34;, &amp;#34;aud&amp;#34;: &amp;#34;受众&amp;#34;, &amp;#34;nbf&amp;#34;: &amp;#34;生效时间&amp;#34;, &amp;#34;iat&amp;#34;: &amp;#34;签发时间&amp;#34;, &amp;#34;jti&amp;#34;: &amp;#34;编号&amp;#34; } 除此之外，我们可以自己定义需要的字段：</description></item><item><title>Golang 使用 Casbin 进行权限管理</title><link>https://xhat.org/posts/golang-casbin/</link><pubDate>Thu, 04 Mar 2021 01:18:53 +0800</pubDate><guid>https://xhat.org/posts/golang-casbin/</guid><description>先说需求，设计一个基于角色的权限控制系统，满足以下几个规则：
+单独配置某个角色对某个资源的访问权限 一个用户可拥有多个角色 可对角色进行禁用或启用 各个角色之间的权限为并集，且只要有一个角色有权限，该用户就有权限操作 可对一个菜单下的某些重要功能做单独控制，当用户有该菜单的访问权限，没有功能访问权限时，依然能访问该菜单下的非功能接口 Casbin 是一个强大的、高效的开源访问控制框架，其权限管理机制支持多种访问控制模型。
+具体支持的模型官网有详细描述，回到本例应该使用的模型是RBAC (基于角色的访问控制)。
+Casbin使用配置文件来设置访问控制模式。它有两个配置文件，model.conf和policy.csv。 其中，model.conf存储了访问模型，policy.csv存储了特定的用户权限配置。
+模型 Casbin 将访问控制模型抽象为基于PERM(Policy, Effect, Request, Matcher)的一个文件，分别为：
+策略 效果 请求 匹配器 基于角色的访问控制需要在此基础上加多一个role_definition进行角色的定义。
+请求(request_definition) 该部分用于请求的定义，经典的三元组：访问实体 (Subject)，访问资源 (Object) 和访问方法 (Action)，也可以根据自己的需求进行增加或删除字段。后端常用的控制请求就是uid, /api/res1, GET。
+[request_definition] r = sub, obj, act 策略(policy_definition) 该部分定义控制策略的模板，哪个实体对哪个资源有怎样的权限。注意：这里的sub, obj不一定需要与请求里面的值一致，具体怎样匹配是匹配器定义的。例如这里的一条策略可以是alice, res1, allow。
+[policy_definition] p = sub, obj, eft 角色定义(role_definition) 该部分定义了角色系统，用户可以具有角色及其继承关系, 资源也可以具有角色及其继承关系。 这两个 RBAC 系统不会互相干扰。这里我使用了三个角色系统：g是用户和角色的从属关系；g2是资源的从属关系；g3是角色的开关。
+[role_definition] g = _, _ g2 = _, _, _ g3 = _, _ 举个例子，g可以是user_1, 1，表示uid是 1 的用户拥有角色 1。g2可以理解为将多个接口组成一个资源组，角色拥有该资源组的权限则有这些接口的访问权限。</description></item></channel></rss>

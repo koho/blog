@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>机器学习 on xhat's Blog</title><link>https://xhat.org/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/</link><description>Recent content in 机器学习 on xhat's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 21 Apr 2022 11:38:04 +0800</lastBuildDate><atom:link href="https://xhat.org/tags/%E6%9C%BA%E5%99%A8%E5%AD%A6%E4%B9%A0/index.xml" rel="self" type="application/rss+xml"/><item><title>理解 RNN</title><link>https://xhat.org/posts/understanding-rnn/</link><pubDate>Thu, 21 Apr 2022 11:38:04 +0800</pubDate><guid>https://xhat.org/posts/understanding-rnn/</guid><description>循环神经网络 (Recurrent Neural Network, RNN) 是一种用于处理时间序列数据的神经网络结构。包括文字、语音、视频等对象。这些数据有两个主要特点：
+数据无固定长度 数据是有时序的，相邻数据之间存在相关性，非相互独立 考虑这样一个问题，如果要预测句子下一个单词是什么，一般需要用到当前单词以及前面的单词，因为句子中前后单词并不是独立的。比如，当前单词是“很”，前一个单词是“天空”，那么下一个单词很大概率是“蓝”。循环神经网络就像人一样拥有记忆的能力，它的输出依赖于当前的输入和记忆，刻画出一个序列当前的输出与之前信息的关系。
+循环神经网络适用于许多序列问题中，例如文本处理、语音识别以及机器翻译等。
+基本结构 如果把上面有 W 的那个带箭头的圈去掉，它就变成了普通的全连接神经网络。图中每个圆圈可以看作是一个单元，而且每个单元做的事情也是一样的，因此可以折叠呈左半图的样子。用一句话解释 RNN，就是一个单元结构重复使用。
+简单理清一下各符号的定义：
+$x_t$ 表示 t 时刻的输入 $y_t$ 表示 t 时刻的输出 $s_t$ 表示 t 时刻的记忆，即隐藏层的输出 U 是输入层到隐藏层之间的权重矩阵 W 是记忆单元到隐藏层之间的权重矩阵 V 是隐藏层到输出层之间的权重矩阵 U, W, V 都是权重矩阵，在不同时刻 t 之间是共享权重的 从右半图可以看到，RNN 每个时刻隐藏层输出都会传递给下一时刻，因此每个时刻的网络都会保留一定的来自之前时刻的历史信息，并结合当前时刻的网络状态一并再传给下一时刻。
+比如在文本预测中，文本序列为 &amp;ldquo;machine&amp;rdquo;，则输入序列和标签序列分别为 &amp;ldquo;machin&amp;rdquo; 和 &amp;ldquo;achine&amp;rdquo;，网络的概览图如下： 前向计算 在一个循环神经网络中，假设隐藏层只有一层。在 t 时刻神经网络接收到一个输入 $x_t$，则隐藏层的输出 $s_t$ 为： $$ s_t = \tanh(Ux_t + Ws_{t-1} + b_s) $$
+在神经网络刚开始训练时，记忆单元中没有上一时刻的网络状态，这时候 $s_{t-1}$ 就是一个初始值。</description></item><item><title>加权最小二乘</title><link>https://xhat.org/posts/introduce-to-weighted-least-squares/</link><pubDate>Mon, 30 Nov 2020 13:17:00 +0800</pubDate><guid>https://xhat.org/posts/introduce-to-weighted-least-squares/</guid><description>介绍 多元线性回归模型的关系式为：
+$$ y_i= \beta_0+\beta_1 x_{i1}+\beta_2 x_{i2} + \dots + \beta_p x_{ip} + \epsilon_i $$ 假设随机误差项 $\epsilon_i(i=1,\dots,n)$满足
+$$ E(\epsilon_i) = 0,\quad \text{Cov}(\epsilon_i,\epsilon_j)=\begin{cases} \sigma^2, &amp; i=j, \\ 0, &amp; i \ne j. \end{cases} $$ 上式通常称为高斯-马尔可夫条件。随机误差$\epsilon_i$的协方差为零表明随机误差项在不同的样本点之间是不相关的(在正态条件下即为独立)。随机误差项$\epsilon_i$在不同的样本点有相同的方差表明各次观测之间有相同的精度。
+多元线性回归模型改写成矩阵形式如下：
+$$ Y=X\mathbf{\beta}+\epsilon,\quad \epsilon\sim\mathbf{N}(0,\sigma^2I_n) $$ 最小二乘估计 最小二乘估计(LSE)就是找$\beta_0,\beta_1,\dots,\beta_p$ ，使离差平方和
+$$ Q(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2 $$ 达到最小，写成矩阵形式如下：
+$$ Q(\beta)= (Y-X\beta)^T(Y-X\beta) $$ 上式中每个平方项的权数相同，是普通最小二乘回归参数估计方法。在误差项$\epsilon_i$等方差不相关的条件下，普通最小二乘估计是回归参数的最小方差线性无偏估计。
+加权最小二乘 然而在异方差的条件下，平和和中的每一项的地位是不相同的。误差项$\epsilon_i$的方差$\sigma_i^2$大的项，在上式平方和中的取值就偏大，在平方和中的作用就大，因而普通最小二乘估计的回归线就被拉向方差大的项，方差大的项的拟合程度就好，而方差小的项拟合程度就差。由此求出的$\hat{\beta_0},\hat{\beta_1},\dots,\hat{\beta_p}$ 仍然是$\beta_0,\beta_1,\dots,\beta_p$ 的无偏估计，但不再是最小方差线性无偏估计。
+加权最小二乘估计的方法是在平方和中加入一个适当的权数$w_i$，以调整各项在平方和中的作用，加权最小二乘的离差平方和为：
+$$ Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^nw_i(y_i-\beta_0-\beta_1x_{i1}-\dots-\beta_px_{ip})^2 $$ 类似地，目标也是寻找$\hat{\beta}$使上式的离差平方和$Q_w$达到最小。上式可以改写为：
+$$ Q_w(\beta_0,\beta_1,\dots,\beta_p)=\sum_{i=1}^n(\sqrt{w_i}y_i-\sqrt{w_i}\beta_0-\sqrt{w_i}\beta_1x_{i1}-\dots-\sqrt{w_i}\beta_px_{ip})^2 $$ 展开为原始的模型式为：
+$$ \sqrt{w_i}y_i= \sqrt{w_i}\beta_0+\sqrt{w_i}\beta_1 x_{i1}+\sqrt{w_i}\beta_2 x_{i2} + \dots + \sqrt{w_i}\beta_p x_{ip} + \sqrt{w_i}\epsilon_i $$ 令$\epsilon_i^*=\sqrt{w_i}\epsilon_i$ , 此时模型中随机误差项的方差为</description></item></channel></rss>
