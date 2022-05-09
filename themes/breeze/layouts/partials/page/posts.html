@@ -1,7 +1,5 @@
 <div class="content">
     <h3 class="title">{{ .Title }}</h3>
-    <div class="note">
-        {{ .Description }}
-    </div>
+    {{ partial "note.html" . }}
     {{ partial "post/list.html" . }}
 </div>

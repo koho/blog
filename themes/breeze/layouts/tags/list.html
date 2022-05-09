@@ -3,9 +3,6 @@
     {{ $display := index (where .Site.Menus.main "Identifier" "tags") 0 }}
 
     <h3 class="title">{{ $display.Name }}</h3>
-    <div class="note">
-        {{ .Description }}
-    </div>
 
     {{ partial "tags.html" (dict "context" . "Terms" .Site.Taxonomies.tags) }}
 

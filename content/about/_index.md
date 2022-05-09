@@ -1,6 +1,7 @@
 ---
 title: 关于
 description: 望着天空的眼睛，比天更蓝。
+hitokoto: true
 ---
 
 ### 写在前面

@@ -9,11 +9,9 @@ paginate = 12
 [params]
     launchDate = 1606500247
     copyright = "xhat"
-    github = "koho"
-    email = "gwohau.tan@gmail.com"
-    tgId = "1468317831"
     logoName = "xhat"
     math = true
+    hitokoto = "https://v1.hitokoto.cn/?encode=js&c=d&c=e&c=i&c=k"
 
 [menu]
     [[menu.main]]

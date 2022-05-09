@@ -1,0 +1,4 @@
+<div class="note hitokoto">{{ .Description }}</div>
+{{ if .Params.hitokoto }}
+    <script src="{{ .Site.Params.hitokoto }}"></script>
+{{ end }}
