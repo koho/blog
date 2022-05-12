@@ -149,6 +149,30 @@ def rnn_forward(x, s0, parameters):
 
 ## 反向传播
 
+$$
+\frac{\partial E}{\partial a^{t-3}} = \frac{\partial L}{\partial a^{t}}
+\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}}
+\frac{\partial a^{t-2}}{\partial a^{t-3}} + \frac{\partial L}{\partial a^{t-1}}
+\frac{\partial a^{t-1}}{\partial a^{t-2}}
+\frac{\partial a^{t-2}}{\partial a^{t-3}} +
+\frac{\partial L}{\partial a^{t-2}}
+\frac{\partial a^{t-2}}{\partial a^{t-3}} +
+\frac{\partial L}{\partial a^{t-3}}
+$$
+
+$$
+\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \left(\frac{\partial L}{\partial a^{t}}
+\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}} +
+\frac{\partial L}{\partial a^{t-1}}
+\frac{\partial a^{t-1}}{\partial a^{t-2}} +
+\frac{\partial L}{\partial a^{t-2}}
+\right) + \frac{\partial L}{\partial a^{t-3}}
+$$
+
+$$
+\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \frac{\partial E}{\partial a^{t-2}} + \frac{\partial L}{\partial a^{t-3}}
+$$
+
 
 ## 示例
 
