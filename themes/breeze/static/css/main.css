@@ -203,6 +203,7 @@ nav li a.active:before {
     white-space: nowrap;
     padding-left: 10px;
     padding-right: 10px;
+    transition: none;
 }
 
 .pagination {
@@ -273,27 +274,31 @@ footer {
     }
 }
 
-.tags a {
-    background-color: #816e64;
-    border-radius: 100px;
-    color: #fff;
+.tags .btn-select {
+    display: inline-flex;
+    align-items: center;
+    background-color: #fff;
+    border-radius: 0.5rem;
+    border: 1px solid #dadce0;
+    color: #5f6368;
     font-size: 14px;
-    height: 32px;
-    line-height: 32px;
+    font-weight: 500;
+    height: 34px;
     white-space: nowrap;
-    padding-left: 16px;
-    padding-right: 16px;
-    transition: none;
+    padding: 0 8px;
+    transition: all .2s cubic-bezier(0.4, 0, 0.2, 1) 0s;
 }
 
-.tags a:hover {
-    color: #fff;
-    background-color: #664d40;
+.tags .btn-select:hover {
+    box-shadow: 0 1px 5px 0 rgb(0 0 0 / 10%);
+    color: #3c4043;
+    border-color: #b2b3b5;
 }
 
-.tags a.active {
+.tags .btn-select.active {
     background-color: #0b5ed7;
     border-color: #0a58ca;
+    color: #fff;
     box-shadow: 0 0 0 0.25rem rgb(49 132 253 / 50%);
 }
 

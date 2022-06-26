@@ -4,8 +4,9 @@
 {{ end }}
 <div class="tags">
     {{ range .Terms }}
-    <a href="{{ .Page.RelPermalink }}" {{ if eq $selectedTag .Page.Title }} class="active" {{ end }}>
-        {{ .Page.Title }} <span class="badge">{{ .Count }}</span>
+    <a class="btn-select{{ if eq $selectedTag .Page.Title }} active{{ end }}" href="{{ .Page.RelPermalink }}">
+        <span>{{ .Page.Title }}</span>
+        <!-- <span class="badge">{{ .Count }}</span> -->
     </a>
     {{ end }}
 </div>
