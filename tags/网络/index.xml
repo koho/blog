@@ -9,7 +9,7 @@ ARP (Address Resolution Protocol) 即地址解析协议，是一种将 IP 地址
 网关 IP：10.1.45.254
 受害者 IP：10.1.45.2
 中间人攻击 欺骗受害者网关在我们这里，受害者就会把数据包发给我们，我们再代为转发给真正的网关，相当于做了一个中间人，这时我们可以捕获到受害者的通信数据包。
-# arpspoof.py import sys from scapy.layers.l2 import Ether, ARP, sendp from scapy.</description></item><item><title>OpenWrt + Pon Stick 配置教程</title><link>https://xhat.org/posts/openwrt-pon-stick/</link><pubDate>Sat, 06 Feb 2021 14:00:28 +0800</pubDate><guid>https://xhat.org/posts/openwrt-pon-stick/</guid><description>0x1 配置访问模块 首先确定模块插在哪个接口，本例中模块接在eth1上。确定模块IP，本例为192.168.1.1。下面配置一个接口，使内网的机器能直接访问模块。
+# arpspoof.py import sys from scapy.layers.l2 import Ether, ARP, sendp from scapy.layers.l2 import getmacbyip if __name__ == &amp;#39;__main__&amp;#39;: if len(sys.</description></item><item><title>OpenWrt + Pon Stick 配置教程</title><link>https://xhat.org/posts/openwrt-pon-stick/</link><pubDate>Sat, 06 Feb 2021 14:00:28 +0800</pubDate><guid>https://xhat.org/posts/openwrt-pon-stick/</guid><description>0x1 配置访问模块 首先确定模块插在哪个接口，本例中模块接在eth1上。确定模块IP，本例为192.168.1.1。下面配置一个接口，使内网的机器能直接访问模块。
 若OpenWrt的地址也是192.168.1.1，需要修改地址： 在网络-&amp;gt;接口页面，编辑LAN接口，把IP地址改为172.20.0.1(其他网段亦可)。
 新建一个接口，名字为PON，协议为静态IP，接口为eth1。 配置IP地址为192.168.1.2，子网掩码为255.255.255.252.
 在防火墙设置选项卡里选择分配给wan，
