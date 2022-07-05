@@ -30,7 +30,7 @@ $$</p><p>设 t 时刻的输入 $x_t$ 的维度为 $(n_x, m)$，其中 $n_x$ 为�
 </span></span><span style=display:flex><span>    by <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;by&#34;</span>]
 </span></span><span style=display:flex><span>
 </span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Compute next hidden state</span>
-</span></span><span style=display:flex><span>    s_next <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>tanh(np<span style=color:#000;font-weight:700>.</span>dot(W, a_prev) <span style=color:#000;font-weight:700>+</span> np<span style=color:#000;font-weight:700>.</span>dot(U, xt) <span style=color:#000;font-weight:700>+</span> bs)
+</span></span><span style=display:flex><span>    s_next <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>tanh(np<span style=color:#000;font-weight:700>.</span>dot(W, s_prev) <span style=color:#000;font-weight:700>+</span> np<span style=color:#000;font-weight:700>.</span>dot(U, xt) <span style=color:#000;font-weight:700>+</span> bs)
 </span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Compute output of the current cell</span>
 </span></span><span style=display:flex><span>    yt_pred <span style=color:#000;font-weight:700>=</span> softmax(np<span style=color:#000;font-weight:700>.</span>dot(V, s_next) <span style=color:#000;font-weight:700>+</span> by)
 </span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Store values needed for backward propagation in cache</span>
@@ -71,24 +71,142 @@ $$</p><p>设 t 时刻的输入 $x_t$ 的维度为 $(n_x, m)$，其中 $n_x$ 为�
 </span></span><span style=display:flex><span>            
 </span></span><span style=display:flex><span>    caches <span style=color:#000;font-weight:700>=</span> (caches, x)
 </span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> s, y_pred, caches
-</span></span></code></pre></div><h2 id=反向传播>反向传播</h2><p>$$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial L}{\partial a^{t}}
-\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} + \frac{\partial L}{\partial a^{t-1}}
-\frac{\partial a^{t-1}}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} +
-\frac{\partial L}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} +
-\frac{\partial L}{\partial a^{t-3}}
-$$</p><p>$$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \left(\frac{\partial L}{\partial a^{t}}
-\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}} +
-\frac{\partial L}{\partial a^{t-1}}
-\frac{\partial a^{t-1}}{\partial a^{t-2}} +
-\frac{\partial L}{\partial a^{t-2}}
-\right) + \frac{\partial L}{\partial a^{t-3}}
-$$</p><p>$$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \frac{\partial E}{\partial a^{t-2}} + \frac{\partial L}{\partial a^{t-3}}
-$$</p><h2 id=示例>示例</h2><h2 id=结论>结论</h2><h2 id=参考>参考</h2><p>[1] <a href=https://www.bilibili.com/read/cv15812073>开小灶｜循环神经网络RNN讲解(一)</a></p><p>[2] <a href="https://mp.weixin.qq.com/s?__biz=MzAxMjMwODMyMQ==&mid=2456338385&idx=1&sn=8e9194c87d3ac6f9134c112b28724e0c&chksm=8c2fc5dfbb584cc9dddbcaea7da777157437f59637f189f2d40f76606c4f52be4b886973bf91&scene=21#wechat_redirect">RNN神经网络模型综述</a></p><p>[3] <a href=http://karpathy.github.io/2015/05/21/rnn-effectiveness/>The Unreasonable Effectiveness of Recurrent Neural Networks</a></p><p>[4] <a href=https://zh.d2l.ai/chapter_recurrent-neural-networks/rnn.html>循环神经网络 - 动手学深度学习</a></p><p>[5] <a href=https://datascience-enthusiast.com/DL/Building_a_Recurrent_Neural_Network-Step_by_Step_v1.html>Building your Recurrent Neural Network - Step by Step</a></p><p>[6] <a href=https://r2rt.com/non-zero-initial-states-for-recurrent-neural-networks.html>Non-Zero Initial States for Recurrent Neural Networks</a></p><p>[7] <a href=https://danijar.com/tips-for-training-recurrent-neural-networks/>Tips for Training Recurrent Neural Networks</a></p></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+</span></span></code></pre></div><h2 id=反向传播>反向传播</h2><p>关于梯度的计算，我们先计算隐藏层输出 $s_t$ 的梯度，然后根据链式法则求得其他梯度。对于某时刻的隐藏层输出 $s_t$，误差的来源有两个：一个是当前时刻的输出层传递过来的误差，另一个是后面时刻的输出层传递过来的误差。总的来说，就是把大于等于 t 时刻的所有误差都计算进去。</p><p>例如，考虑 t - 3 时刻的梯度计算：</p>$$
+\begin{aligned}
+\frac{\partial E}{\partial s_{t-3}} &= \frac{\partial L}{\partial s_{t}}
+\frac{\partial s_t}{\partial s_{t-1}}\frac{\partial s_{t-1}}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} + \frac{\partial L}{\partial s_{t-1}}
+\frac{\partial s_{t-1}}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} +
+\frac{\partial L}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} +
+\frac{\partial L}{\partial s_{t-3}}\\
+&=\frac{\partial s_{t-2}}{\partial s_{t-3}} \left(\frac{\partial L}{\partial s_{t}}
+\frac{\partial s_t}{\partial s_{t-1}}\frac{\partial s_{t-1}}{\partial s_{t-2}} +
+\frac{\partial L}{\partial s_{t-1}}
+\frac{\partial s_{t-1}}{\partial s_{t-2}} +
+\frac{\partial L}{\partial s_{t-2}}
+\right) + \frac{\partial E}{\partial s_{t-3}}\\
+&=\frac{\partial E}{\partial s_{t-2}}\frac{\partial s_{t-2}}{\partial s_{t-3}} + \frac{\partial L}{\partial s_{t-3}}
+\end{aligned}
+$$<p>可以看出这是梯度的递归式，最后梯度的两项和上面的描述一致。我们只要从最后的 t 时刻一步一步往前面的时刻推算，就能得到所有时刻的梯度。上式还有一项需要计算，由于
+$$
+\frac{\partial \tanh(x)}{\partial x} = 1 - \tanh(x)^2
+$$</p><p>参照前向计算中 $s_t$ 的表达式，则 $s_t$ 关于上一时刻 $s_{t-1}$ 的导数容易求得：
+$$
+\frac{\partial s_{t}}{\partial s_{t-1}} = W^T(1 - s_t^2)
+$$</p><p>最后可得各权重的梯度：
+$$
+\frac{\partial s_{t}}{\partial W} = (1 - s_t^2)s_{t-1}^T
+$$
+$$
+\frac{\partial s_{t}}{\partial U} = (1 - s_t^2)x_{t}^T
+$$
+$$
+\frac{\partial s_{t}}{\partial b_s} = \sum_{batch} (1 - s_t^2)
+$$</p><p>具体实现方面，可以分为两部分，一部分是单个 RNN 单元里面的反向传播；另一部分是沿时间线的反向传播。</p><h3 id=单元内传播>单元内传播</h3><p>设当前单元的时刻为 t，我们假设此时已经计算出了当前隐藏层输出 $s_t$ 的梯度 $\frac{\partial E}{\partial s_t}$，各权重的梯度可以立刻得出：
+$$
+\frac{\partial E}{\partial W} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial W} = \frac{\partial E}{\partial s_t} (1 - s_t^2)s_{t-1}^T
+$$
+$$
+\frac{\partial E}{\partial U} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial U} = \frac{\partial E}{\partial s_t} (1 - s_t^2)x_{t}^T
+$$
+$$
+\frac{\partial E}{\partial b_s} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial b_s} = \frac{\partial E}{\partial s_t} \sum_{batch} (1 - s_t^2)
+$$</p><p>值得注意的是还要计算关于上一个时刻 t - 1 隐藏层输出的梯度（式 3）的第一项：
+$$
+\frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial s_{t-1}} = W_T \frac{\partial E}{\partial s_t} (1 - s_t^2)
+$$</p><p>上面的式子都有公共项，可以提取出来：
+$$
+\text{dtanh} = \frac{\partial E}{\partial s_t} (1 - s_t^2)
+$$</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>rnn_cell_backward</span>(ds_next, cache):
+</span></span><span style=display:flex><span>    <span style=color:#d14>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Implements the backward pass for the RNN-cell (single time-step).
+</span></span></span><span style=display:flex><span><span style=color:#d14>
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Arguments:
+</span></span></span><span style=display:flex><span><span style=color:#d14>    ds_next -- Gradient of loss with respect to next hidden state
+</span></span></span><span style=display:flex><span><span style=color:#d14>    cache -- python dictionary containing useful values (output of rnn_cell_forward())
+</span></span></span><span style=display:flex><span><span style=color:#d14>
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Returns:
+</span></span></span><span style=display:flex><span><span style=color:#d14>    gradients -- python dictionary containing:
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dx -- Gradients of input data, of shape (n_x, m)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        ds_prev -- Gradients of previous hidden state, of shape (n_s, m)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dU -- Gradients of input-to-hidden weights, of shape (n_s, n_x)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dW -- Gradients of hidden-to-hidden weights, of shape (n_s, n_s)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dbs -- Gradients of bias vector, of shape (n_s, 1)
+</span></span></span><span style=display:flex><span><span style=color:#d14>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Retrieve values from cache</span>
+</span></span><span style=display:flex><span>    (s_next, s_prev, xt, parameters) <span style=color:#000;font-weight:700>=</span> cache
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Retrieve values from parameters</span>
+</span></span><span style=display:flex><span>    U <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;U&#34;</span>]
+</span></span><span style=display:flex><span>    W <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;W&#34;</span>]
+</span></span><span style=display:flex><span>    V <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;V&#34;</span>]
+</span></span><span style=display:flex><span>    bs <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;bs&#34;</span>]
+</span></span><span style=display:flex><span>    by <span style=color:#000;font-weight:700>=</span> parameters[<span style=color:#d14>&#34;by&#34;</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    dtanh <span style=color:#000;font-weight:700>=</span> (<span style=color:#099>1</span> <span style=color:#000;font-weight:700>-</span> s_next <span style=color:#000;font-weight:700>**</span> <span style=color:#099>2</span>) <span style=color:#000;font-weight:700>*</span> ds_next
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    dxt <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>dot(U<span style=color:#000;font-weight:700>.</span>T, dtanh)
+</span></span><span style=display:flex><span>    dU <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>dot(dtanh, xt<span style=color:#000;font-weight:700>.</span>T)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    ds_prev <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>dot(W<span style=color:#000;font-weight:700>.</span>T, dtanh)
+</span></span><span style=display:flex><span>    dW <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>dot(dtanh, s_prev<span style=color:#000;font-weight:700>.</span>T)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    dbs <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>sum(dtanh, <span style=color:#099>1</span>, keepdims<span style=color:#000;font-weight:700>=</span><span style=color:#000;font-weight:700>True</span>)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    gradients <span style=color:#000;font-weight:700>=</span> {<span style=color:#d14>&#34;dxt&#34;</span>: dxt, <span style=color:#d14>&#34;ds_prev&#34;</span>: ds_prev, <span style=color:#d14>&#34;dU&#34;</span>: dU, <span style=color:#d14>&#34;dW&#34;</span>: dW, <span style=color:#d14>&#34;dbs&#34;</span>: dbs}
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> gradients
+</span></span></code></pre></div><h3 id=沿时间线传播>沿时间线传播</h3><p>沿时间线传播的流程是把误差从最后的 t 时刻一步一步往前传播到 0 时刻。假设此时已经计算出了各时刻输出层损失函数对隐藏层输出 $s_t$ 的梯度 $\frac{\partial L}{\partial s_t}$（式 3）的第二项。</p><p>则我们在循环每个时刻时，加上上一个单元对当前时刻隐藏层梯度（式 3 的第一项），可计算出式 3 的值，从而进行上面的单元内传播。</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>rnn_backward</span>(ds, caches):
+</span></span><span style=display:flex><span>    <span style=color:#d14>&#34;&#34;&#34;
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Implement the backward pass for a RNN over an entire sequence of input data.
+</span></span></span><span style=display:flex><span><span style=color:#d14>
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Arguments:
+</span></span></span><span style=display:flex><span><span style=color:#d14>    ds -- Upstream gradients of all hidden states, of shape (n_s, m, T_x)
+</span></span></span><span style=display:flex><span><span style=color:#d14>    caches -- tuple containing information from the forward pass (rnn_forward)
+</span></span></span><span style=display:flex><span><span style=color:#d14>
+</span></span></span><span style=display:flex><span><span style=color:#d14>    Returns:
+</span></span></span><span style=display:flex><span><span style=color:#d14>    gradients -- python dictionary containing:
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dx -- Gradient w.r.t. the input data, numpy-array of shape (n_x, m, T_x)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        ds0 -- Gradient w.r.t the initial hidden state, numpy-array of shape (n_s, m)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dU -- Gradient w.r.t the input&#39;s weight matrix, numpy-array of shape (n_s, n_x)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dW -- Gradient w.r.t the hidden state&#39;s weight matrix, numpy-arrayof shape (n_s, n_s)
+</span></span></span><span style=display:flex><span><span style=color:#d14>        dbs -- Gradient w.r.t the bias, of shape (n_s, 1)
+</span></span></span><span style=display:flex><span><span style=color:#d14>    &#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    (caches, x) <span style=color:#000;font-weight:700>=</span> caches
+</span></span><span style=display:flex><span>    (s1, s0, x1, parameters) <span style=color:#000;font-weight:700>=</span> caches[<span style=color:#099>0</span>]
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    n_s, m, T_x <span style=color:#000;font-weight:700>=</span> ds<span style=color:#000;font-weight:700>.</span>shape
+</span></span><span style=display:flex><span>    n_x, m <span style=color:#000;font-weight:700>=</span> x1<span style=color:#000;font-weight:700>.</span>shape
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Initialize the gradients with the right sizes</span>
+</span></span><span style=display:flex><span>    dx <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_x, m, T_x))
+</span></span><span style=display:flex><span>    dU <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_s, n_x))
+</span></span><span style=display:flex><span>    dW <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_s, n_s))
+</span></span><span style=display:flex><span>    dbs <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_s, <span style=color:#099>1</span>))
+</span></span><span style=display:flex><span>    ds0 <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_s, m))
+</span></span><span style=display:flex><span>    ds_prevt <span style=color:#000;font-weight:700>=</span> np<span style=color:#000;font-weight:700>.</span>zeros((n_s, m))
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Loop through all the time steps</span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>for</span> t <span style=color:#000;font-weight:700>in</span> <span style=color:#0086b3>reversed</span>(<span style=color:#0086b3>range</span>(T_x)):
+</span></span><span style=display:flex><span>        <span style=color:#998;font-style:italic># Compute gradients at time step t.</span>
+</span></span><span style=display:flex><span>        gradients <span style=color:#000;font-weight:700>=</span> rnn_cell_backward(ds[:, :, t] <span style=color:#000;font-weight:700>+</span> ds_prevt, caches[t])
+</span></span><span style=display:flex><span>        <span style=color:#998;font-style:italic># Retrieve derivatives from gradients</span>
+</span></span><span style=display:flex><span>        dxt, ds_prevt, dUt, dWt, dbst <span style=color:#000;font-weight:700>=</span> gradients[<span style=color:#d14>&#34;dxt&#34;</span>], gradients[<span style=color:#d14>&#34;ds_prev&#34;</span>], gradients[<span style=color:#d14>&#34;dU&#34;</span>], gradients[<span style=color:#d14>&#34;dW&#34;</span>], gradients[<span style=color:#d14>&#34;dbs&#34;</span>]
+</span></span><span style=display:flex><span>        <span style=color:#998;font-style:italic># Increment global derivatives w.r.t parameters by adding their derivative at time-step t</span>
+</span></span><span style=display:flex><span>        dx[:, :, t] <span style=color:#000;font-weight:700>=</span> dxt
+</span></span><span style=display:flex><span>        dU <span style=color:#000;font-weight:700>+=</span> dUt
+</span></span><span style=display:flex><span>        dW <span style=color:#000;font-weight:700>+=</span> dWt
+</span></span><span style=display:flex><span>        dbs <span style=color:#000;font-weight:700>+=</span> dbst
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Set da0 to the gradient of a which has been backpropagated through all time-steps</span>
+</span></span><span style=display:flex><span>    ds0 <span style=color:#000;font-weight:700>=</span> ds_prevt
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#998;font-style:italic># Store the gradients in a python dictionary</span>
+</span></span><span style=display:flex><span>    gradients <span style=color:#000;font-weight:700>=</span> {<span style=color:#d14>&#34;dx&#34;</span>: dx, <span style=color:#d14>&#34;ds0&#34;</span>: ds0, <span style=color:#d14>&#34;dU&#34;</span>: dU, <span style=color:#d14>&#34;dW&#34;</span>: dW, <span style=color:#d14>&#34;dbs&#34;</span>: dbs}
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> gradients
+</span></span></code></pre></div><h2 id=结论>结论</h2><h3 id=优点>优点</h3><ul><li>计算考虑了历史信息</li><li>适合处理序列数据</li><li>可处理任意长度的输入</li></ul><h3 id=缺点>缺点</h3><ul><li>梯度消失、梯度爆炸</li><li>无法处理长时依赖问题</li><li>计算速度慢</li></ul><h2 id=参考>参考</h2><p>[1] <a href=https://www.bilibili.com/read/cv15812073>开小灶｜循环神经网络RNN讲解(一)</a></p><p>[2] <a href="https://mp.weixin.qq.com/s?__biz=MzAxMjMwODMyMQ==&mid=2456338385&idx=1&sn=8e9194c87d3ac6f9134c112b28724e0c&chksm=8c2fc5dfbb584cc9dddbcaea7da777157437f59637f189f2d40f76606c4f52be4b886973bf91&scene=21#wechat_redirect">RNN神经网络模型综述</a></p><p>[3] <a href=http://karpathy.github.io/2015/05/21/rnn-effectiveness/>The Unreasonable Effectiveness of Recurrent Neural Networks</a></p><p>[4] <a href=https://zh.d2l.ai/chapter_recurrent-neural-networks/rnn.html>循环神经网络 - 动手学深度学习</a></p><p>[5] <a href=https://datascience-enthusiast.com/DL/Building_a_Recurrent_Neural_Network-Step_by_Step_v1.html>Building your Recurrent Neural Network - Step by Step</a></p><p>[6] <a href=https://r2rt.com/non-zero-initial-states-for-recurrent-neural-networks.html>Non-Zero Initial States for Recurrent Neural Networks</a></p><p>[7] <a href=https://danijar.com/tips-for-training-recurrent-neural-networks/>Tips for Training Recurrent Neural Networks</a></p></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
 <script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="使用 MQTT 实现 API 接口" rel=prev href=/posts/mqtt-create-api/><span>前篇</span>使用 MQTT 实现 API 接口</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div><div class=content id=post-related><h3 class=title>延伸阅读</h3><div class=grid><div class=card><a href=/posts/introduce-to-weighted-least-squares/ rel=bookmark><div class=banner style=background-image:url(/images/0_g0BN7JUBfBoDkriE.png)></div><h4>加权最小二乘</h4><p>2020-11-30</p><div class=tags><span>机器学习</span>
 <span>回归</span></div></a></div></div></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>
