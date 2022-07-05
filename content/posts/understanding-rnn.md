@@ -94,7 +94,7 @@ def rnn_cell_forward(xt, s_prev, parameters):
     by = parameters["by"]
 
     # Compute next hidden state
-    s_next = np.tanh(np.dot(W, a_prev) + np.dot(U, xt) + bs)
+    s_next = np.tanh(np.dot(W, s_prev) + np.dot(U, xt) + bs)
     # Compute output of the current cell
     yt_pred = softmax(np.dot(V, s_next) + by)
     # Store values needed for backward propagation in cache
@@ -149,34 +149,187 @@ def rnn_forward(x, s0, parameters):
 
 ## 反向传播
 
+关于梯度的计算，我们先计算隐藏层输出 $s_t$ 的梯度，然后根据链式法则求得其他梯度。对于某时刻的隐藏层输出 $s_t$，误差的来源有两个：一个是当前时刻的输出层传递过来的误差，另一个是后面时刻的输出层传递过来的误差。总的来说，就是把大于等于 t 时刻的所有误差都计算进去。
+
+例如，考虑 t - 3 时刻的梯度计算：
+
+{{<tex>}}
 $$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial L}{\partial a^{t}}
-\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} + \frac{\partial L}{\partial a^{t-1}}
-\frac{\partial a^{t-1}}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} +
-\frac{\partial L}{\partial a^{t-2}}
-\frac{\partial a^{t-2}}{\partial a^{t-3}} +
-\frac{\partial L}{\partial a^{t-3}}
+\begin{aligned}
+\frac{\partial E}{\partial s_{t-3}} &= \frac{\partial L}{\partial s_{t}}
+\frac{\partial s_t}{\partial s_{t-1}}\frac{\partial s_{t-1}}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} + \frac{\partial L}{\partial s_{t-1}}
+\frac{\partial s_{t-1}}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} +
+\frac{\partial L}{\partial s_{t-2}}
+\frac{\partial s_{t-2}}{\partial s_{t-3}} +
+\frac{\partial L}{\partial s_{t-3}}\\
+&=\frac{\partial s_{t-2}}{\partial s_{t-3}} \left(\frac{\partial L}{\partial s_{t}}
+\frac{\partial s_t}{\partial s_{t-1}}\frac{\partial s_{t-1}}{\partial s_{t-2}} +
+\frac{\partial L}{\partial s_{t-1}}
+\frac{\partial s_{t-1}}{\partial s_{t-2}} +
+\frac{\partial L}{\partial s_{t-2}}
+\right) + \frac{\partial E}{\partial s_{t-3}}\\
+&=\frac{\partial E}{\partial s_{t-2}}\frac{\partial s_{t-2}}{\partial s_{t-3}} + \frac{\partial L}{\partial s_{t-3}}
+\end{aligned}
+$$
+{{</tex>}}
+
+可以看出这是梯度的递归式，最后梯度的两项和上面的描述一致。我们只要从最后的 t 时刻一步一步往前面的时刻推算，就能得到所有时刻的梯度。上式还有一项需要计算，由于
+$$
+\frac{\partial \tanh(x)}{\partial x} = 1 - \tanh(x)^2
 $$
 
+参照前向计算中 $s_t$ 的表达式，则 $s_t$ 关于上一时刻 $s_{t-1}$ 的导数容易求得：
 $$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \left(\frac{\partial L}{\partial a^{t}}
-\frac{\partial a^t}{\partial a^{t-1}}\frac{\partial a^{t-1}}{\partial a^{t-2}} +
-\frac{\partial L}{\partial a^{t-1}}
-\frac{\partial a^{t-1}}{\partial a^{t-2}} +
-\frac{\partial L}{\partial a^{t-2}}
-\right) + \frac{\partial L}{\partial a^{t-3}}
+\frac{\partial s_{t}}{\partial s_{t-1}} = W^T(1 - s_t^2)
 $$
 
+最后可得各权重的梯度：
 $$
-\frac{\partial E}{\partial a^{t-3}} = \frac{\partial a^{t-2}}{\partial a^{t-3}} \frac{\partial E}{\partial a^{t-2}} + \frac{\partial L}{\partial a^{t-3}}
+\frac{\partial s_{t}}{\partial W} = (1 - s_t^2)s_{t-1}^T
+$$
+$$
+\frac{\partial s_{t}}{\partial U} = (1 - s_t^2)x_{t}^T
+$$
+$$
+\frac{\partial s_{t}}{\partial b_s} = \sum_{batch} (1 - s_t^2)
 $$
 
+具体实现方面，可以分为两部分，一部分是单个 RNN 单元里面的反向传播；另一部分是沿时间线的反向传播。
 
-## 示例
+### 单元内传播
+设当前单元的时刻为 t，我们假设此时已经计算出了当前隐藏层输出 $s_t$ 的梯度 $\frac{\partial E}{\partial s_t}$，各权重的梯度可以立刻得出：
+$$
+\frac{\partial E}{\partial W} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial W} = \frac{\partial E}{\partial s_t} (1 - s_t^2)s_{t-1}^T
+$$
+$$
+\frac{\partial E}{\partial U} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial U} = \frac{\partial E}{\partial s_t} (1 - s_t^2)x_{t}^T
+$$
+$$
+\frac{\partial E}{\partial b_s} = \frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial b_s} = \frac{\partial E}{\partial s_t} \sum_{batch} (1 - s_t^2)
+$$
+
+值得注意的是还要计算关于上一个时刻 t - 1 隐藏层输出的梯度（式 3）的第一项：
+$$
+\frac{\partial E}{\partial s_t} \frac{\partial s_{t}}{\partial s_{t-1}} = W_T \frac{\partial E}{\partial s_t} (1 - s_t^2) 
+$$
+
+上面的式子都有公共项，可以提取出来：
+$$
+\text{dtanh} = \frac{\partial E}{\partial s_t} (1 - s_t^2)
+$$
+
+```python
+def rnn_cell_backward(ds_next, cache):
+    """
+    Implements the backward pass for the RNN-cell (single time-step).
+
+    Arguments:
+    ds_next -- Gradient of loss with respect to next hidden state
+    cache -- python dictionary containing useful values (output of rnn_cell_forward())
+
+    Returns:
+    gradients -- python dictionary containing:
+        dx -- Gradients of input data, of shape (n_x, m)
+        ds_prev -- Gradients of previous hidden state, of shape (n_s, m)
+        dU -- Gradients of input-to-hidden weights, of shape (n_s, n_x)
+        dW -- Gradients of hidden-to-hidden weights, of shape (n_s, n_s)
+        dbs -- Gradients of bias vector, of shape (n_s, 1)
+    """
+
+    # Retrieve values from cache
+    (s_next, s_prev, xt, parameters) = cache
+
+    # Retrieve values from parameters
+    U = parameters["U"]
+    W = parameters["W"]
+    V = parameters["V"]
+    bs = parameters["bs"]
+    by = parameters["by"]
+
+    dtanh = (1 - s_next ** 2) * ds_next
+
+    dxt = np.dot(U.T, dtanh)
+    dU = np.dot(dtanh, xt.T)
+
+    ds_prev = np.dot(W.T, dtanh)
+    dW = np.dot(dtanh, s_prev.T)
+
+    dbs = np.sum(dtanh, 1, keepdims=True)
+
+    gradients = {"dxt": dxt, "ds_prev": ds_prev, "dU": dU, "dW": dW, "dbs": dbs}
+    return gradients
+```
+
+### 沿时间线传播
+
+沿时间线传播的流程是把误差从最后的 t 时刻一步一步往前传播到 0 时刻。假设此时已经计算出了各时刻输出层损失函数对隐藏层输出 $s_t$ 的梯度 $\frac{\partial L}{\partial s_t}$（式 3）的第二项。
+
+则我们在循环每个时刻时，加上上一个单元对当前时刻隐藏层梯度（式 3 的第一项），可计算出式 3 的值，从而进行上面的单元内传播。
+
+```python
+def rnn_backward(ds, caches):
+    """
+    Implement the backward pass for a RNN over an entire sequence of input data.
+
+    Arguments:
+    ds -- Upstream gradients of all hidden states, of shape (n_s, m, T_x)
+    caches -- tuple containing information from the forward pass (rnn_forward)
+
+    Returns:
+    gradients -- python dictionary containing:
+        dx -- Gradient w.r.t. the input data, numpy-array of shape (n_x, m, T_x)
+        ds0 -- Gradient w.r.t the initial hidden state, numpy-array of shape (n_s, m)
+        dU -- Gradient w.r.t the input's weight matrix, numpy-array of shape (n_s, n_x)
+        dW -- Gradient w.r.t the hidden state's weight matrix, numpy-arrayof shape (n_s, n_s)
+        dbs -- Gradient w.r.t the bias, of shape (n_s, 1)
+    """
+    (caches, x) = caches
+    (s1, s0, x1, parameters) = caches[0]
+
+    n_s, m, T_x = ds.shape
+    n_x, m = x1.shape
+
+    # Initialize the gradients with the right sizes
+    dx = np.zeros((n_x, m, T_x))
+    dU = np.zeros((n_s, n_x))
+    dW = np.zeros((n_s, n_s))
+    dbs = np.zeros((n_s, 1))
+    ds0 = np.zeros((n_s, m))
+    ds_prevt = np.zeros((n_s, m))
+
+    # Loop through all the time steps
+    for t in reversed(range(T_x)):
+        # Compute gradients at time step t.
+        gradients = rnn_cell_backward(ds[:, :, t] + ds_prevt, caches[t])
+        # Retrieve derivatives from gradients
+        dxt, ds_prevt, dUt, dWt, dbst = gradients["dxt"], gradients["ds_prev"], gradients["dU"], gradients["dW"], gradients["dbs"]
+        # Increment global derivatives w.r.t parameters by adding their derivative at time-step t
+        dx[:, :, t] = dxt
+        dU += dUt
+        dW += dWt
+        dbs += dbst
+
+    # Set da0 to the gradient of a which has been backpropagated through all time-steps
+    ds0 = ds_prevt
+
+    # Store the gradients in a python dictionary
+    gradients = {"dx": dx, "ds0": ds0, "dU": dU, "dW": dW, "dbs": dbs}
+
+    return gradients
+```
 
 ## 结论
+### 优点
+- 计算考虑了历史信息
+- 适合处理序列数据
+- 可处理任意长度的输入
+
+### 缺点
+- 梯度消失、梯度爆炸
+- 无法处理长时依赖问题
+- 计算速度慢
 
 ## 参考
 
