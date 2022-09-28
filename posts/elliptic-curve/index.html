@@ -1,0 +1,119 @@
+<!doctype html><html lang=zh-cn id=page><head><meta charset=utf-8><title>ECC 椭圆曲线 - xhat's Blog</title><meta name=viewport content="width=device-width,initial-scale=1"><link href=/css/font.css type=text/css rel=stylesheet><link href=/css/main.css type=text/css rel=stylesheet><link href=/css/github-markdown-light.css type=text/css rel=stylesheet><link rel=icon href=/favicon.svg></head><body><header><a href=/ id=logo><svg xmlns="http://www.w3.org/2000/svg" width="38.82" height="52.68" viewBox="0 -765 572 776" xmlns:xlink="http://www.w3.org/1999/xlink"><defs><path id="MJX-9-TEX-I-78" d="M52 289q7 42 54 97t116 56q35 0 64-18t43-45q42 63 101 63 37 0 64-22t28-59q0-29-14-47t-27-22-23-4q-19 0-31 11t-12 29q0 46 50 63-11 13-40 13-13 0-19-2-38-16-56-66-60-221-60-258 0-28 16-40t35-12q37 0 73 33t49 81q3 10 6 11t16 2h4q15 0 15-8 0-1-2-11-16-57-62-101T333-11q-70 0-106 63-41-62-94-62h-6Q78-10 57 16T35 71q0 32 19 52t45 20q43 0 43-42 0-20-12-35T107 46 94 41l-3-1q0-1 6-4t16-7 19-3q36 0 62 45 9 16 23 68t28 108 16 66q5 27 5 39 0 28-15 40t-34 12q-40 0-75-32T93 290q-2-9-5-10t-16-2H58q-6 6-6 11z"/><path id="MJX-9-TEX-N-5E" d="M112 560 249 694l8-8Q387 562 387 560l-26-29q-2 1-58 50l-53 46-55-47q-13-11-26-23t-21-19l-8-6q-2-2-15 14l-13 14z"/></defs><g stroke="currentcolor" fill="currentcolor" stroke-width="0" transform="matrix(1 0 0 -1 0 0)"><g data-mml-node="math"><g data-mml-node="TeXAtom"><g data-mml-node="mover"><g data-mml-node="mi"><use xlink:href="#MJX-9-TEX-I-78"/></g><g data-mml-node="mo" transform="translate(63.8, -29)"><use xlink:href="#MJX-9-TEX-N-5E"/></g></g></g></g></g></svg><b>xhat</b></a><nav><ul><li><a href=/ class=active>文章</a></li><li><a href=/tags/>标签</a></li><li><a href=/archives/>归档</a></li><li><a href=/about/>关于</a></li></ul></nav></header><section class=main><article class=content><h2 class=title>ECC 椭圆曲线</h2><div class=remark><time datetime="2022-09-26 09:18:01 +0800 +0800">2022-09-26</time></div><div class=tags><a href=/tags/%E6%95%B0%E5%AD%A6/>数学</a>
+<a href=/tags/%E5%AE%89%E5%85%A8/>安全</a></div><div class=markdown-body><p>椭圆曲线密码学（Elliptic Curve Cryptography, ECC）是一种基于椭圆曲线数学的非对称式密码学算法。</p><blockquote><p>ECC 的主要优势是它相比 RSA 加密算法使用较小的密钥长度并提供相当等级的安全性。</p></blockquote><p>如今，在现代计算机网络技术中，比如 TLS、PGP 和 SSH，都有用到椭圆曲线加密算法。更不要说去中心化系统，如比特币和其它加密电子货币了。</p><h2 id=椭圆曲线>椭圆曲线</h2><p>椭圆曲线是由这个方程描述的平面曲线：</p><p>$$
+y^2 = x^3 + ax + b
+$$</p><p>其中 $a$, $b$ 都是实数。上述方程就是所谓的<strong>魏尔斯特拉斯一般形式</strong>。</p><p>为排除退化成奇异曲线的情况，还需要满足 $4a^3 + 27b^2 \ne 0$。</p><p align=center><img src=/images/ecc-lines.png width=400></p><p>随着 $a$ 和 $b$ 取值的变化，椭圆曲线可能在平面上会呈现不同的性状。不论是直观还是证明，我们都可以发现椭圆曲线是关于 $x$ 轴对称的。</p><h2 id=群>群</h2><p>在数学中，群（Group）是由一个集合以及一个二元运算符所组成的代数结构，且符合以下四个性质：</p><ol><li><p><strong>封闭性</strong>：对于所有 $G$ 中的 $a$, $b$，运算 $a \cdot b$ 的结果也在 $G$ 中。</p></li><li><p><strong>结合律</strong>：对于所有 $G$ 中的 $a$, $b$, $c$，等式 $(a \cdot b) \cdot c = a \cdot (b \cdot c)$ 成立。</p></li><li><p><strong>单位元</strong>：存在 $G$ 中的一个元素 $e$，使得对于所有 $G$ 中的元素 $a$，总有等式 $e \cdot a = a \cdot e = a$ 成立。</p></li><li><p><strong>逆元</strong>：对于每个 $G$ 中的 $a$，存在 $G$ 中的一个元素 $b$ 使得总有 $a \cdot b = b \cdot a = e$，$e$ 为单位元。</p></li></ol><p>其中群 $(G,\cdot)$ 也常常简记为 $G$，符号「 · 」是具体的运算，比如整数加法。</p><p>如果我们添加第五条要求：</p><ol start=5><li><strong>交换律</strong>：$a \cdot b = b \cdot a$</li></ol><p>那么这个群就是<strong>阿贝尔群</strong>。</p><p>最常见的群之一是整数集 $Z$ 和整数的加法所构成的整数加法群。</p><h3 id=基本概念>基本概念</h3><h4 id=阶>阶</h4><p>群中元素个数称为群 $G$ 的阶，记为 $|G|$。</p><h4 id=有限群>有限群</h4><p>一个群被称为有限群，如果它有有限个元素。元素的数目叫做群 $G$ 的阶。</p><h2 id=椭圆曲线的群律>椭圆曲线的群律</h2><p>我们可以在椭圆曲线上定义一个群。具体地说，</p><ul><li>群的元素是椭圆曲线上的点，二元运算符为 $+$</li><li>单位元是无穷远点 $O$</li><li>点 $P$ 的逆是它关于 $x$ 轴的对称点</li></ul><p>加法 $P + Q$ 通过如下法则定义：</p><blockquote><p>过 $P$ 和 $Q$ 两点的直线与椭圆曲线相交于第三点 $R$，作 $R$ 关于 $x$ 轴对称的点 $R^\prime$，$R^\prime$ 是椭圆曲线上的点，则 $P + Q = R^\prime$。</p></blockquote><p align=center><img src=/images/ecc-addition.png></p><p>特殊情况说明：</p><ol><li>如果 $Q$ 是无穷远点，则 $P + O = O + P = P$，这使得无穷远点 $O$ 作为该群的单位元，满足单位元性质。</li><li>如果 $P$ 和 $Q$ 关于 $x$ 轴对称，则它们的第三个交点为无穷远点，$P + Q = Q + P = O$。而 $P$ 的逆为它关于 $x$ 轴的对称点 $Q$，椭圆曲线是关于 $x$ 轴对称的，满足逆元性质。为叙述方便，点 $P$ 的逆用 $-P$ 来表示。</li><li>如果 $P$ 与 $Q$ 相等，此时只有一个点，在这种情况下，有无数条直线过这个点。事情就变得有点复杂了。但我们可以先构想一个 $Q^\prime$ 点（$Q^\prime \ne P$）。如果 $Q^\prime$ 逐渐接近 $P$ 点，$PQ^\prime$ 会变成什么样？$PQ^\prime$ 直线会逐渐趋近曲线的切线。根据这个事实，我们能这样断言：过 $P$ 点作曲线的切线与曲线交于另一点 $R$，则 $P + P = -R$。</li><li>如果 $P \ne Q$，但找不到第三点 $R$ 怎么办？这种情况很像上一种。事实上，这种情况就是过 $P$，$Q$ 的直线是曲线的切线。它的和就是其中一个点关于 $x$ 轴的对称点。不妨设 $Q$ 点就是切点，在上一种情况，我们已经说明 $Q + Q = -P$，这个等式可以变成 $P + Q = -Q$。</li></ol><p align=center><img src=/images/ecc-cases.png></p><p>显然，上面定义的群具有封闭性，而结合律 $(A + B) + C = A + (B + C)$ 这个结论的证明并不直观，下面一个例子可以更直观地理解。</p><p align=center><img src=/images/ecc-associative.png></p><p>上图中绿色线为椭圆曲线，蓝色线为 $(A + B) + C$，橙色线为 $A + (B + C)$，可以看到最后 <code>L1</code> 和 <code>L2</code> 两条线都相交于同一个点 $R$，两式的结果都是 $R^\prime$ 点。</p><p>两点的加法为什么不直接用第三个交点作为最终的结果呢，显然这样的话是无法满足结合律的。经过上面的叙述，我们可以得出上面定义的群是阿贝尔群。</p><h2 id=代数加法>代数加法</h2><p>给定曲线 $y^2 = x^3 + ax + b$，曲线上的两点 $P = (x_P, y_P)$，$Q = (x_Q, y_Q)$，其中 $x_P \ne x_Q$，则过 $P$，$Q$ 两点的直线方程为 $y = sx + d$，其中斜率 $s$ 为：</p><p>$$
+s = \frac{y_P - y_Q}{x_P - x_Q}
+$$</p><p>我们需要求出直线与曲线的第三个交点 $R=(x_R, y_R)$，把 $y$ 代入曲线方程即可：</p><p>$$
+{(sx+d)^2=x^3+ax+b}
+$$</p><p>展开式子，得</p><p>$$
+{x^3-s^2x^2-2sdx+ax+b-d^2=0}
+$$</p><p>上述方程有三个根，也就是 $P$，$Q$，$R$ 三个点。</p><p>$$
+(x - x_P)(x - x_Q)(x - x_R) = x^3 + x^2(-x_R-x_Q-x_P) + x(x_Qx_R+x_Rx_P+x_Px_Q) - x_Px_Qx_R = 0
+$$</p><p>对比两个方程的系数可以求得</p><p>$$
+x_R = s^2 - x_P - x_Q
+$$</p><p>又直线过 $P$ 点，可求出直线方程的截距 $d$：</p><p>$$
+d = y_P - sx_P
+$$</p><p>最后根据直线方程，计算 $R$ 的 $y$ 坐标：</p><p>$$
+y_R = y_P + s(x_R - x_P)
+$$</p><p>若 $x_P = x_Q$，可分为以下几种情况：</p><ol><li>$y_P = -y_Q$</li><li>$y_P = y_Q = 0$</li><li>$y_P = y_Q \ne 0$</li></ol><p>前两种情况根据前面的描述，和定义为 $O$。最后一种情况即 $P = Q$，需要求出曲线在 $P$ 点的切线。也就是需要对曲线进行求导。</p><p>$$
+\frac{dy^2}{dx} = \frac{d}{dx} (x^3 + ax +b)
+=3x^2 + a
+$$</p><p>$$
+2y\frac{dy}{dx} = 3x^2 + a
+$$</p><p>$$
+\frac{dy}{dx} = \frac{3x^2 + a}{2y}
+$$</p><p>此时过 $P$ 点的直线的斜率 $s$ 为</p><p>$$
+s = \frac{3x_P^2+a}{2y_P}
+$$</p><p>$R$ 点的坐标为</p><p>$$
+x_R = s^2 - 2x_P
+$$</p><p>$$
+y_R = y_P + s(x_R - x_P)
+$$</p><h2 id=数乘>数乘</h2><p>除了加法，我们还可以定义另一种算符：数乘，即</p><p>$$
+nP = \underbrace{P + P + \ldots + P}_{n}
+$$</p><p>直接相加的话，$nP$ 的计算需要 $n$ 次加法。如果 $n$ 有 $k$ 位二进制位，那算法复杂度就是 $O(2^k)$。</p><p>然而，我们能找到更快的算法：其中一个就是<strong>倍乘相加</strong>算法。</p><p>要计算 $nP$，我们把 $n$ 用二进制表示：</p><p>$$
+n=2^0n_{0}+2^1n_{1}+2^{2}n_{2}+\cdots+2^{m}n_{m}
+$$</p><p>其中 $n_i \in \{0, 1\}$，$m = \lfloor \log_2n\rfloor$。所以 $nP$ 为</p><p>$$
+nP = 2^0n_{0}P+2^1n_{1}P+2^{2}n_{2}P+\cdots+2^{m}n_{m}P
+$$</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>bits</span>(n):
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>while</span> n:
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>yield</span> n <span style=color:#000;font-weight:700>&amp;</span> <span style=color:#099>1</span>
+</span></span><span style=display:flex><span>        n <span style=color:#000;font-weight:700>&gt;&gt;=</span> <span style=color:#099>1</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>double_and_add</span>(n, x):
+</span></span><span style=display:flex><span>    result <span style=color:#000;font-weight:700>=</span> <span style=color:#000;font-weight:700>None</span>
+</span></span><span style=display:flex><span>    addend <span style=color:#000;font-weight:700>=</span> x
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>for</span> bit <span style=color:#000;font-weight:700>in</span> bits(n):
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>if</span> bit <span style=color:#000;font-weight:700>==</span> <span style=color:#099>1</span>:
+</span></span><span style=display:flex><span>            <span style=color:#000;font-weight:700>if</span> result <span style=color:#000;font-weight:700>is</span> <span style=color:#000;font-weight:700>None</span>:
+</span></span><span style=display:flex><span>                result <span style=color:#000;font-weight:700>=</span> addend
+</span></span><span style=display:flex><span>            <span style=color:#000;font-weight:700>else</span>:
+</span></span><span style=display:flex><span>                result <span style=color:#000;font-weight:700>=</span> add(result, addend)
+</span></span><span style=display:flex><span>        addend <span style=color:#000;font-weight:700>=</span> add(addend, addend)
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> result
+</span></span></code></pre></div><p>如果加和是复杂度为 $O(1)$ 的操作，那这个算法的复杂度就是 $O(\log n)$，这就相当优秀了。</p><h2 id=有限域>有限域</h2><p>域是个集合 $F$ 且带有加法和乘法两种运算。它是一个加法的阿贝尔群，0 为单位元；非零元素集合是一个乘法的阿贝尔群，1 为单位元，且满足乘法分配律。</p><p>有限域亦称伽罗瓦域（Galois Fields），是仅含有限个元素的域。其元素个数也跟域的阶数相同，一个有限域的阶总是一个素数的幂。</p><p>我们在前面讨论的都是实数域上的椭圆曲线，但密码学中并不直接使用，因为</p><ol><li>实数域上的椭圆曲线是连续的，有无限个点，密码学要求有限个点。</li><li>实数域上的椭圆曲线运算是有误差的，不精确，密码学要求精确。</li></ol><p>因此我们需要引入有限域上的椭圆曲线。</p><h3 id=模算术>模算术</h3><p>运算（mod n）将所有整数映射到集合 $\{0, 1, \ldots,(n − 1)\}$。因此，限制在这个集合的技术称为模算术。</p><p>性质：</p><ul><li>$[(a \mod n) + (b \mod n)] \mod n = (a + b) \mod n$</li><li>$[(a \mod n) − (b \mod n)] \mod n = (a − b) \mod n$</li><li>$[(a \mod n) × (b \mod n)] \mod n = (a × b) \mod n$</li></ul><p>运用以上性质，可以计算出模加法和模乘法两种运算的结果：</p><p align=center><img src=/images/mod-table.png></p><h4 id=加法逆元>加法逆元</h4><p>若存在 $z$，使得</p><p>$$
+w+z=0 \mod n
+$$</p><p>则，$z$ 即为加法逆元 $−w$。</p><h4 id=乘法逆元>乘法逆元</h4><p>若存在 $z$，使得</p><p>$$
+w \times z=1 \mod n
+$$</p><p>则，$z$ 即为乘法逆元 $w^{-1}$。</p><table><thead><tr><th>$w$</th><th>0</th><th>1</th><th>2</th><th>3</th><th>4</th><th>5</th><th>6</th><th>7</th></tr></thead><tbody><tr><td>$-w$</td><td>0</td><td>7</td><td>6</td><td>5</td><td>4</td><td>3</td><td>2</td><td>1</td></tr><tr><td>$w^{-1}$</td><td>-</td><td>1</td><td>-</td><td>3</td><td>-</td><td>5</td><td>-</td><td>7</td></tr></tbody></table><p>从上表可以看出乘法逆元有不存在的情况。</p><h4 id=性质>性质</h4><p>下面总结一下 $Z_n$ 中整数模运算的性质：</p><table><thead><tr><th>性质</th><th>表达式</th></tr></thead><tbody><tr><td>交换律</td><td>$(w + x) \mod n = (x + w) \mod n$<br>$(w × x) \mod n = (x × w) \mod n$</td></tr><tr><td>结合律</td><td>$[(w + x) + y] \mod n = [w + (x + y)] \mod n$<br>$[(w × x) × y] \mod n = [w × (x × y)] \mod n$</td></tr><tr><td>分配律</td><td>$[w × (x + y)] \mod n = [(w × x) + (w × y)] \mod n$</td></tr><tr><td>单位元</td><td>$(0 + w) \mod n = w \mod n$<br>$(1 × w) \mod n = w \mod n$</td></tr><tr><td>加法逆元</td><td>$\forall w \in Z_n$，存在 $z$ 使得 $w + z = 0 \mod n$</td></tr></tbody></table><p>显然，要定义一个域，还需要一个乘法逆元的性质需要满足。</p><h3 id=gfp>GF(p)</h3><p>给定一个<strong>素数</strong> $p$，元素个数为 $p$ 的有限域被定义为：整数 $\{0, 1, \ldots, p − 1\}$ 的集合 $Z_p$。其中，运算为模 $p$ 的算术运算。</p><h4 id=乘法逆元-1>乘法逆元</h4><p>任意 $w \in Z_p$, 如果 $w \ne 0$，则存在 $z \in Z_p$，使得</p><p>$$
+w \times z ≡ 1 \mod p
+$$</p><p>有了乘法逆元，$Z_p$ 就是一个有限域。接下来可以改造椭圆曲线了。</p><h3 id=有限域上的椭圆曲线>有限域上的椭圆曲线</h3><p>椭圆曲线密码学是基于以下形式的方程：</p><p>$$
+y^2 = (x^3 + a \times x + b) \mod p
+$$</p><p>可以看到这个式子只是对原式进行了简单的取模运算而已。下图是椭圆曲线 $y^2 = x^3 + 7$ 对素数 17 取模后的图像：</p><p align=center><img src=/images/ecc-mod-space.png width=500></p><p>原本连续光滑的曲线变成了离散的点，但依然可以看到它也是关于某条水平直线对称的。</p><p>使用模运算改造前面实数域椭圆曲线的公式：</p>$$
+s = \begin{cases}
+(3x_P^2+a)\times(2y_P)^{-1} \mod p & P = Q\\
+(y_P - y_Q)\times(x_P - x_Q)^{-1} \mod p & P \ne Q
+\end{cases}
+$$
+
+<p>$$
+x_R = (s^2 - x_P - x_Q) \mod p
+$$</p><p>$$
+y_R = (y_P + s\times(x_R - x_P)) \mod p
+$$</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>inv</span>(a, b):
+</span></span><span style=display:flex><span>    <span style=color:#d14>&#34;&#34;&#34;拓展欧几里得法求模逆元&#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>if</span> b <span style=color:#000;font-weight:700>==</span> <span style=color:#099>0</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>return</span> a, <span style=color:#099>1</span>, <span style=color:#099>0</span>
+</span></span><span style=display:flex><span>    g, x, y <span style=color:#000;font-weight:700>=</span> inv(b, a <span style=color:#000;font-weight:700>%</span> b)
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>if</span> g <span style=color:#000;font-weight:700>!=</span> <span style=color:#099>1</span>:
+</span></span><span style=display:flex><span>        <span style=color:#000;font-weight:700>raise</span> <span style=color:#900;font-weight:700>ValueError</span>
+</span></span><span style=display:flex><span>    x, y <span style=color:#000;font-weight:700>=</span> y, x <span style=color:#000;font-weight:700>-</span> a <span style=color:#000;font-weight:700>//</span> b <span style=color:#000;font-weight:700>*</span> y
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> g, x, y
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>def</span> <span style=color:#900;font-weight:700>add</span>(p1, p2):
+</span></span><span style=display:flex><span>    <span style=color:#d14>&#34;&#34;&#34;椭圆曲线加法&#34;&#34;&#34;</span>
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>if</span> p1 <span style=color:#000;font-weight:700>==</span> p2:
+</span></span><span style=display:flex><span>        _, x, _ <span style=color:#000;font-weight:700>=</span> inv(<span style=color:#099>2</span> <span style=color:#000;font-weight:700>*</span> p1[<span style=color:#099>1</span>], p)
+</span></span><span style=display:flex><span>        s <span style=color:#000;font-weight:700>=</span> (((<span style=color:#099>3</span> <span style=color:#000;font-weight:700>*</span> p1[<span style=color:#099>0</span>] <span style=color:#000;font-weight:700>**</span> <span style=color:#099>2</span> <span style=color:#000;font-weight:700>+</span> a) <span style=color:#000;font-weight:700>%</span> p) <span style=color:#000;font-weight:700>*</span> x) <span style=color:#000;font-weight:700>%</span> p
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>else</span>:
+</span></span><span style=display:flex><span>        _, x, _ <span style=color:#000;font-weight:700>=</span> inv(p1[<span style=color:#099>0</span>] <span style=color:#000;font-weight:700>-</span> p2[<span style=color:#099>0</span>], p)
+</span></span><span style=display:flex><span>        s <span style=color:#000;font-weight:700>=</span> (((p1[<span style=color:#099>1</span>] <span style=color:#000;font-weight:700>-</span> p2[<span style=color:#099>1</span>]) <span style=color:#000;font-weight:700>%</span> p) <span style=color:#000;font-weight:700>*</span> x) <span style=color:#000;font-weight:700>%</span> p
+</span></span><span style=display:flex><span>    rx <span style=color:#000;font-weight:700>=</span> (s <span style=color:#000;font-weight:700>**</span> <span style=color:#099>2</span> <span style=color:#000;font-weight:700>-</span> p1[<span style=color:#099>0</span>] <span style=color:#000;font-weight:700>-</span> p2[<span style=color:#099>0</span>]) <span style=color:#000;font-weight:700>%</span> p
+</span></span><span style=display:flex><span>    ry <span style=color:#000;font-weight:700>=</span> (<span style=color:#000;font-weight:700>-</span>p1[<span style=color:#099>1</span>] <span style=color:#000;font-weight:700>+</span> s <span style=color:#000;font-weight:700>*</span> (p1[<span style=color:#099>0</span>] <span style=color:#000;font-weight:700>-</span> rx)) <span style=color:#000;font-weight:700>%</span> p
+</span></span><span style=display:flex><span>    <span style=color:#000;font-weight:700>return</span> rx, ry
+</span></span></code></pre></div><h4 id=示例>示例</h4><blockquote><p>有下面一个椭圆曲线：
+$$
+y^2=x^3+9x+17 \sim \mathbb{F}_{23}
+$$
+已知 $P=(16,5)$，$Q=(4,5)$，求 $k$，使得 $Q=kP$。</p></blockquote><p>我们可以先验证一个 $P$，$Q$ 是否在这个曲线上：</p><p>$$
+5^2 \mod 23 = (16^3+9\times16+17) \mod 23 = 2
+$$</p><p>$$
+5^2 \mod 23 = (4^3+9\times4+17) \mod 23 = 2
+$$</p><p>已知 $a=9$，$p=23$，多次尝试计算不同的 $k$ 值：</p><div class=highlight><pre tabindex=0 style=background-color:#fff;-moz-tab-size:4;-o-tab-size:4;tab-size:4><code class=language-python data-lang=python><span style=display:flex><span>a <span style=color:#000;font-weight:700>=</span> <span style=color:#099>9</span>
+</span></span><span style=display:flex><span>p <span style=color:#000;font-weight:700>=</span> <span style=color:#099>23</span>
+</span></span><span style=display:flex><span>
+</span></span><span style=display:flex><span><span style=color:#000;font-weight:700>for</span> i <span style=color:#000;font-weight:700>in</span> <span style=color:#0086b3>range</span>(<span style=color:#099>1</span>, <span style=color:#099>10</span>):
+</span></span><span style=display:flex><span>    r <span style=color:#000;font-weight:700>=</span> double_and_add(i, (<span style=color:#099>16</span>, <span style=color:#099>5</span>))
+</span></span><span style=display:flex><span>    <span style=color:#0086b3>print</span>(<span style=color:#d14>f</span><span style=color:#d14>&#39;</span><span style=color:#d14>{</span>i<span style=color:#d14>}</span><span style=color:#d14>P = </span><span style=color:#d14>{</span>r<span style=color:#d14>}</span><span style=color:#d14>&#39;</span>)
+</span></span></code></pre></div><p>脚本输出的计算结果：</p><pre tabindex=0><code>1P = (16, 5)
+2P = (20, 20)
+3P = (14, 14)
+4P = (19, 20)
+5P = (13, 10)
+6P = (7, 3)
+7P = (8, 7)
+8P = (12, 17)
+9P = (4, 5)
+</code></pre><p>经过我们的暴力计算，得出 $k = 9$。</p><h2 id=离散对数>离散对数</h2><p>在上面的例子中，我们一个个尝试 $k$ 来求解等式。给定 $n$ 和 $P$，我们至少有一种多项式时间的算法可以计算 $Q = kP$。但是反过来呢？我们知道 $Q$ 和 $P$ 需要求解 $k$ 呢？这是一个离散对数问题。</p><blockquote><p>给定素数 $p$ 和正整数 $g$，知道 $g^x \mod p$ 的值，求 $x$。</p></blockquote><p>对于符合特定条件的 $p$ 和 $g$，这个问题是很难算的，更准确地说，是没有多项式时间的解法。</p><p>如果改一种记法，把椭圆曲线上点的加法记作乘法，原来的乘法就变成了幂运算，那么椭圆曲线上难题的形式跟离散对数问题应该是一致的。</p><blockquote><p>尽管两个的形式一致，但是他们并不等价。实际上这个问题比大整数质因子分解（RSA）和离散对数（DH）难题都要难不少，目前还没有出现亚指数级时间复杂度的算法（大整数质因子分解和离散对数问题都有），这就是文章开头提到的同样甚至更高的安全强度下，椭圆曲线加密的密钥比 RSA 和 DH 的短不少的原因。</p></blockquote><p>你知道 $P$ 和 $Q$，但是你无法据此求出 $k$，因为这里并没有椭圆曲线减法或者除法可用。你可以做成千上万次的加法，最终你只是知道在曲线上面结束的点，但是具体是如何到达这个点你也并不知道。你无法进行反向操作，得到相乘时的 $k$。</p><p>这种即便你知道原点和终点，但是无法知道被乘数是 ECC 算法背后安全性的所有基础，而这一原则也被称为<a href=https://zh.wikipedia.org/wiki/%E9%99%B7%E9%97%A8%E5%87%BD%E6%95%B0><strong>单向陷门函数</strong></a>。</p><h2 id=参考>参考</h2><p>[1] <a href=https://zhuanlan.zhihu.com/p/34363494>新手上路：实数上的椭圆曲线和群论</a></p><p>[2] <a href=https://zhuanlan.zhihu.com/p/97953640>一文读懂 ECDSA 算法如何保护数据</a></p><p>[3] <a href=https://en.wikipedia.org/wiki/Elliptic_curve>Elliptic curve</a></p><p>[4] <a href=https://crypto.stackexchange.com/questions/3907/how-does-one-calculate-the-scalar-multiplication-on-elliptic-curves>How does one calculate the scalar multiplication on elliptic curves?</a></p><p>[5] <a href=https://www.certicom.com/content/certicom/en/30-elliptic-curve-groups-over-fp.html>Elliptic Curve Groups over Fp</a></p><p>[6] <a href=https://blog.csdn.net/qmickecs/article/details/76585303>离散对数和椭圆曲线加密原理</a></p><p>[7] <a href="https://zhuanlan.zhihu.com/p/44743146?utm_id=0">ECC椭圆曲线加密算法：有限域和离散对数</a></p><p>[8] <a href=https://en.wikipedia.org/wiki/Field_(mathematics)>Field (mathematics)</a></p><p>[9] <a href=http://staff.ustc.edu.cn/~huangwc/crypto/4c.pdf>现代密码学理论与实践</a></p></div><link href=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.css rel=stylesheet><script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/katex.min.js></script>
+<script src=https://cdn.bootcdn.net/ajax/libs/KaTeX/0.12.0/contrib/auto-render.min.js onload='renderMathInElement(document.querySelector(`.content`),{delimiters:[{left:"$$",right:"$$",display:!0},{left:"$",right:"$",display:!1}]})'></script></article></section><section class=tail><div class=content id=post-nav><a title="理解 RNN" rel=prev href=/posts/understanding-rnn/><span>前篇</span>理解 RNN</a></div><div class=content id=post-comment><script src=https://giscus.app/client.js data-repo=koho/blog data-repo-id="MDEwOlJlcG9zaXRvcnkzMjM1MDUxMDk=" data-category=Announcements data-category-id=DIC_kwDOE0hL1c4COeTz data-mapping=pathname data-reactions-enabled=1 data-emit-metadata=0 data-input-position=bottom data-theme=light data-lang=zh-CN crossorigin=anonymous async></script></div></section><footer><span>Powered by <a href=https://gohugo.io>Hugo</a></span><br><span>© 2022 xhat</span></footer></body></html>

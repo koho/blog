@@ -1,4 +1,14 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>xhat's Blog</title><link>https://xhat.org/</link><description>Recent content on xhat's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 21 Apr 2022 11:38:04 +0800</lastBuildDate><atom:link href="https://xhat.org/index.xml" rel="self" type="application/rss+xml"/><item><title>理解 RNN</title><link>https://xhat.org/posts/understanding-rnn/</link><pubDate>Thu, 21 Apr 2022 11:38:04 +0800</pubDate><guid>https://xhat.org/posts/understanding-rnn/</guid><description>循环神经网络 (Recurrent Neural Network, RNN) 是一种用于处理时间序列数据的神经网络结构。包括文字、语音、视频等对象。这些数据有两个主要特点：
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>xhat's Blog</title><link>https://xhat.org/</link><description>Recent content on xhat's Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 26 Sep 2022 09:18:01 +0800</lastBuildDate><atom:link href="https://xhat.org/index.xml" rel="self" type="application/rss+xml"/><item><title>ECC 椭圆曲线</title><link>https://xhat.org/posts/elliptic-curve/</link><pubDate>Mon, 26 Sep 2022 09:18:01 +0800</pubDate><guid>https://xhat.org/posts/elliptic-curve/</guid><description>椭圆曲线密码学（Elliptic Curve Cryptography, ECC）是一种基于椭圆曲线数学的非对称式密码学算法。
+ECC 的主要优势是它相比 RSA 加密算法使用较小的密钥长度并提供相当等级的安全性。
+如今，在现代计算机网络技术中，比如 TLS、PGP 和 SSH，都有用到椭圆曲线加密算法。更不要说去中心化系统，如比特币和其它加密电子货币了。
+椭圆曲线 椭圆曲线是由这个方程描述的平面曲线：
+$$ y^2 = x^3 + ax + b $$
+其中 $a$, $b$ 都是实数。上述方程就是所谓的魏尔斯特拉斯一般形式。
+为排除退化成奇异曲线的情况，还需要满足 $4a^3 + 27b^2 \ne 0$。
+随着 $a$ 和 $b$ 取值的变化，椭圆曲线可能在平面上会呈现不同的性状。不论是直观还是证明，我们都可以发现椭圆曲线是关于 $x$ 轴对称的。
+群 在数学中，群（Group）是由一个集合以及一个二元运算符所组成的代数结构，且符合以下四个性质：
+封闭性：对于所有 $G$ 中的 $a$, $b$，运算 $a \cdot b$ 的结果也在 $G$ 中。
+结合律：对于所有 $G$ 中的 $a$, $b$, $c$，等式 $(a \cdot b) \cdot c = a \cdot (b \cdot c)$ 成立。</description></item><item><title>理解 RNN</title><link>https://xhat.org/posts/understanding-rnn/</link><pubDate>Thu, 21 Apr 2022 11:38:04 +0800</pubDate><guid>https://xhat.org/posts/understanding-rnn/</guid><description>循环神经网络 (Recurrent Neural Network, RNN) 是一种用于处理时间序列数据的神经网络结构。包括文字、语音、视频等对象。这些数据有两个主要特点：
 数据无固定长度 数据是有时序的，相邻数据之间存在相关性，非相互独立 考虑这样一个问题，如果要预测句子下一个单词是什么，一般需要用到当前单词以及前面的单词，因为句子中前后单词并不是独立的。比如，当前单词是“很”，前一个单词是“天空”，那么下一个单词很大概率是“蓝”。循环神经网络就像人一样拥有记忆的能力，它的输出依赖于当前的输入和记忆，刻画出一个序列当前的输出与之前信息的关系。
 循环神经网络适用于许多序列问题中，例如文本处理、语音识别以及机器翻译等。
 基本结构 如果把上面有 W 的那个带箭头的圈去掉，它就变成了普通的全连接神经网络。图中每个圆圈可以看作是一个单元，而且每个单元做的事情也是一样的，因此可以折叠呈左半图的样子。用一句话解释 RNN，就是一个单元结构重复使用。
