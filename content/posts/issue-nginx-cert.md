@@ -5,7 +5,7 @@ archives:
     - 2022
 tags:
     - Linux
-image: /images/placeholder.png
+image: /images/https-certificate.jpg
 leading: false
 draft: false
 ---
