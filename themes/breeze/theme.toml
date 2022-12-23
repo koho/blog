@@ -5,11 +5,11 @@ name = "Breeze"
 license = "MIT"
 licenselink = "https://github.com/koho/blog/blob/master/themes/breeze/LICENSE"
 description = "Another simple hugo theme"
-homepage = "https://xhat.org"
+homepage = "https://github.com/koho/blog"
 tags = ["Simple"]
 features = []
 min_version = "0.41.0"
 
 [author]
   name = "koho"
-  homepage = "https://xhat.org"
+  homepage = "https://github.com/koho/blog"

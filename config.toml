@@ -1,4 +1,4 @@
-baseurl = "https://xhat.org"
+baseurl = "https://blog.xhat.io"
 languageCode = "zh-cn"
 theme = "breeze"
 title = "Xhat Blog"
