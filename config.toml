@@ -1,7 +1,7 @@
 baseurl = "https://xhat.org"
 languageCode = "zh-cn"
 theme = "breeze"
-title = "xhat's Blog"
+title = "Xhat Blog"
 DefaultContentLanguage = "zh"
 paginate = 12
 
