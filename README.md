@@ -1,1 +1,1 @@
-个人博客： https://blog.xhat.io
+个人博客： https://blog.xhat.org
