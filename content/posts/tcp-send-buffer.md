@@ -162,8 +162,8 @@ type tcpESTATSSendBuffROD struct {
 ```go
 func (c *Client) setupTcp() {
 	var lp, rp uint32
-	la := netip.MustParseAddrPort(c.Conn.LocalAddr().String())
-	ra := netip.MustParseAddrPort(c.Conn.RemoteAddr().String())
+	la := netip.MustParseAddrPort(c.conn.LocalAddr().String())
+	ra := netip.MustParseAddrPort(c.conn.RemoteAddr().String())
 	lp = uint32(la.Port()>>8 | la.Port()<<8)
 	rp = uint32(ra.Port()>>8 | ra.Port()<<8)
 
