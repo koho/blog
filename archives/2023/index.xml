@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>2023 on X̂ Blog</title><link>https://blog.xhat.org/archives/2023/</link><description>Recent content in 2023 on X̂ Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Thu, 04 May 2023 16:37:47 +0800</lastBuildDate><atom:link href="https://blog.xhat.org/archives/2023/index.xml" rel="self" type="application/rss+xml"/><item><title>获取 TCP 发送缓冲区信息</title><link>https://blog.xhat.org/posts/tcp-send-buffer/</link><pubDate>Thu, 04 May 2023 16:37:47 +0800</pubDate><guid>https://blog.xhat.org/posts/tcp-send-buffer/</guid><description>在大多数的网络编程情况下，是不需要特意关心 TCP 的缓冲区信息的。但在一些工业应用场景，如 RS485 转网口的数据采集，半双工的 485 不能同时进行读和写，这就要求 TCP 确认发送完一个指令后，才能发第二条。因为是总线网络，同时发送多条指令，对端回复数据将出现错乱。
+当应用程序往套接字写入数据时，实际上只是写入了内核的发送缓冲区，接收方什么时候能收到报文是个未知数。
+因此在某些需要同步状态的地方，发送方最好能确认对方收到报文后再做下一步动作。
+Linux Linux 提供了 ioctl(fd, SIOCOUTQ, &amp;amp;count) 方法来查询一个套接字是否有未发送完成的数据。
+SIOCOUTQ Returns the amount of unsent data in the socket send queue. The socket must not be in LISTEN state, otherwise an error (EINVAL) is returned. SIOCOUTQ is defined in &amp;lt;linux/sockios.h&amp;gt;. Alternatively, you can use the synonymous TIOCOUTQ, defined in &amp;lt;sys/ioctl.h&amp;gt;.
+发送方可以使用这个方法来判断对端是否收到报文。以 Go 为例：
+import ( &amp;#34;net&amp;#34; &amp;#34;golang.org/x/sys/unix&amp;#34; &amp;#34;unsafe&amp;#34; ) func getSendQueueLength(conn *net.</description></item></channel></rss>
