@@ -1,4 +1,15 @@
-<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>安全 on X̂ Blog</title><link>https://blog.xhat.org/tags/%E5%AE%89%E5%85%A8/</link><description>Recent content in 安全 on X̂ Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Mon, 26 Sep 2022 09:18:01 +0800</lastBuildDate><atom:link href="https://blog.xhat.org/tags/%E5%AE%89%E5%85%A8/index.xml" rel="self" type="application/rss+xml"/><item><title>ECC 椭圆曲线</title><link>https://blog.xhat.org/posts/elliptic-curve/</link><pubDate>Mon, 26 Sep 2022 09:18:01 +0800</pubDate><guid>https://blog.xhat.org/posts/elliptic-curve/</guid><description>椭圆曲线密码学（Elliptic Curve Cryptography, ECC）是一种基于椭圆曲线数学的非对称式密码学算法。
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>安全 on X̂ Blog</title><link>https://blog.xhat.org/tags/%E5%AE%89%E5%85%A8/</link><description>Recent content in 安全 on X̂ Blog</description><generator>Hugo -- gohugo.io</generator><language>zh-cn</language><lastBuildDate>Tue, 19 Sep 2023 23:34:26 +0800</lastBuildDate><atom:link href="https://blog.xhat.org/tags/%E5%AE%89%E5%85%A8/index.xml" rel="self" type="application/rss+xml"/><item><title>OpenSSL 生成自签名证书</title><link>https://blog.xhat.org/posts/openssl-self-signed/</link><pubDate>Tue, 19 Sep 2023 23:34:26 +0800</pubDate><guid>https://blog.xhat.org/posts/openssl-self-signed/</guid><description>免费证书有效期一般较短，当服务器较多时，每个服务器都要安装脚本更新证书，管理起来比较麻烦。而合理使用自签名证书（比如测试或者非公开环境）也是不错的替代选择。
+生成 CA 根证书 CA (Certificate Authority) 被称为证书授权中心，是数字证书发放和管理的机构。
+根证书是 CA 认证中心给自己颁发的证书，是信任链的起始点。安装根证书意味着对这个 CA 认证中心的信任。
+生成私钥 可以选择以下任何一种算法：
+椭圆曲线（ECC）：
+openssl ecparam -genkey -name secp384r1 -out ca.key 若需要加密私钥：
+openssl ecparam -genkey -name secp384r1 | openssl ec -aes256 -out ca.key 其中 -name 参数指定使用的曲线，曲线名称可通过以下命令查看：
+openssl ecparam -list_curves RSA：
+openssl genrsa -out ca.key 4096 若需要加密私钥：
+openssl genrsa -des3 -out ca.key 4096 生成根证书 使用上面的私钥生成一个证书，证书会包含一些组织信息和公钥。为了一劳永逸有效期自然越长越好，本例设置为 73000 天（20 年）。
+如果是 RSA，可以使用 -sha256 签名。
+openssl req -key ca.key -new -x509 -days 73000 -sha384 -subj &amp;#34;/C=CN/ST=Guangdong Province/L=Shenzhen/O=Shenzhen XXX Co.</description></item><item><title>ECC 椭圆曲线</title><link>https://blog.xhat.org/posts/elliptic-curve/</link><pubDate>Mon, 26 Sep 2022 09:18:01 +0800</pubDate><guid>https://blog.xhat.org/posts/elliptic-curve/</guid><description>椭圆曲线密码学（Elliptic Curve Cryptography, ECC）是一种基于椭圆曲线数学的非对称式密码学算法。
 ECC 的主要优势是它相比 RSA 加密算法使用较小的密钥长度并提供相当等级的安全性。
 如今，在现代计算机网络技术中，比如 TLS、PGP 和 SSH，都有用到椭圆曲线加密算法。更不要说去中心化系统，如比特币和其它加密电子货币了。
 椭圆曲线 椭圆曲线是由这个方程描述的平面曲线：
