@@ -10,7 +10,7 @@
         <h3>{{ .Title }}</h3>
         {{ partial "post/archive.html" . }}
     {{ else }}
-        {{ range (.Paginate .Pages.ByTitle.Reverse 2).Pages }}
+        {{ range (.Paginate .Pages.ByTitle.Reverse 3).Pages }}
         <h3>{{ .Name }}</h3>
         {{ partial "post/archive.html" . }}
         {{ end }}
